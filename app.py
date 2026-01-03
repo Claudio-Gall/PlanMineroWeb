@@ -72,11 +72,6 @@ def load_css():
             }
             footer {visibility: hidden;}
             </style>
-                padding-left: 1rem; 
-                padding-right: 1rem;
-                max-width: 100% !important;
-            }
-            </style>
             """
             st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
             st.markdown(st_fixes, unsafe_allow_html=True)
