@@ -59,14 +59,21 @@ def load_css():
             st_fixes = """
             <style>
             [data-testid="stAppViewContainer"] {background-color: #050910;}
-            [data-testid="stHeader"] {background: transparent;}
-            [data-testid="stToolbar"] {visibility: hidden;}
+            [data-testid="stHeader"] {display: none !important;}
+            [data-testid="stToolbar"] {display: none !important;}
+            [data-testid="stDecoration"] {display: none !important;}
+            [data-testid="stStatusWidget"] {display: none !important;}
+            div[data-testid="stToolbar"] {display: none !important;}
+            header {display: none !important;}
+            footer {display: none !important;}
+            
             .block-container {
-                padding-top: 1rem; padding-bottom: 0rem;
-                padding-left: 1rem; padding-right: 1rem;
+                padding-top: 0rem !important; 
+                padding-bottom: 0rem !important;
+                padding-left: 1rem; 
+                padding-right: 1rem;
                 max-width: 100% !important;
             }
-            footer {visibility: hidden;}
             </style>
             """
             st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
