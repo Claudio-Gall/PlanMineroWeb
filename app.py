@@ -60,25 +60,18 @@ def load_css():
             <style>
             [data-testid="stAppViewContainer"] {background-color: #050910;}
             
-            /* NUCLEAR HIDING */
-            [data-testid="stHeader"], [data-testid="stToolbar"], .stAppHeader, header, footer {
-                display: none !important;
-                visibility: hidden !important;
-                height: 0px !important;
-                opacity: 0 !important;
-                pointer-events: none !important;
-            }
+            /* SAFE RESTORATION - HIDE ONLY HEADER */
+            [data-testid="stHeader"] {background: transparent;}
             
-            /* Specific Mobile Targets */
-            div[class*="st-emotion-cache-1"] { display: none !important; } /* Often targets toolbar wrapper */
-            
-            /* Hide Bottom Right Floating Buttons if accessible */
-            button[kind="header"] { display: none !important; }
-            div[data-testid="stStatusWidget"] { display: none !important; }
-
             .block-container {
-                padding-top: 0rem !important; 
-                padding-bottom: 0rem !important;
+                padding-top: 1rem; 
+                padding-bottom: 0rem;
+                padding-left: 1rem; 
+                padding-right: 1rem;
+                max-width: 100% !important;
+            }
+            footer {visibility: hidden;}
+            </style>
                 padding-left: 1rem; 
                 padding-right: 1rem;
                 max-width: 100% !important;
