@@ -59,14 +59,23 @@ def load_css():
             st_fixes = """
             <style>
             [data-testid="stAppViewContainer"] {background-color: #050910;}
-            [data-testid="stHeader"] {display: none !important;}
-            [data-testid="stToolbar"] {display: none !important;}
-            [data-testid="stDecoration"] {display: none !important;}
-            [data-testid="stStatusWidget"] {display: none !important;}
-            div[data-testid="stToolbar"] {display: none !important;}
-            header {display: none !important;}
-            footer {display: none !important;}
             
+            /* NUCLEAR HIDING */
+            [data-testid="stHeader"], [data-testid="stToolbar"], .stAppHeader, header, footer {
+                display: none !important;
+                visibility: hidden !important;
+                height: 0px !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+            }
+            
+            /* Specific Mobile Targets */
+            div[class*="st-emotion-cache-1"] { display: none !important; } /* Often targets toolbar wrapper */
+            
+            /* Hide Bottom Right Floating Buttons if accessible */
+            button[kind="header"] { display: none !important; }
+            div[data-testid="stStatusWidget"] { display: none !important; }
+
             .block-container {
                 padding-top: 0rem !important; 
                 padding-bottom: 0rem !important;
