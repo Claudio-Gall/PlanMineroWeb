@@ -1,0 +1,10 @@
+streamlit
+pandas
+plotly
+altair
+google-generativeai
+google-cloud-firestore
+google-auth
+requests
+openpyxl
+numpy
