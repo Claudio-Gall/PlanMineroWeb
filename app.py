@@ -1977,6 +1977,13 @@ if data_loaded:
                     'ai_raw': ai_raw_context # PROCESSED RAW DATA
                 }
                 agent = CodeGenerationChatAgent(data_context)
+                
+                # LOAD KEY SAFELY
+                try:
+                    api_key = st.secrets["GEMINI_API_KEY"]
+                except:
+                    api_key = os.environ.get("GEMINI_API_KEY")
+                
                 agent.initialize(api_key=api_key)
                 st.session_state['chat_agent_inst'] = agent
             except Exception as e:
