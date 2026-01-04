@@ -8,3 +8,4 @@ google-auth
 requests
 openpyxl
 numpy
+tabulate
