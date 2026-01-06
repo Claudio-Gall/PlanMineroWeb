@@ -1840,17 +1840,6 @@ if data_loaded:
         else: st.error("Data Planta Empty")
 
 
-    # --- CLOUD STATUS DIAGNOSTIC (GLOBAL) ---
-    try:
-        import cloud_manager
-        is_cloud_ok = cloud_manager.check_cloud_status()
-        if is_cloud_ok:
-            st.success("🟢 Memoria Cloud: Conectada (Online)")
-        else:
-            st.error("🔴 Memoria Cloud: Desconectada (Verifica Secrets)")
-    except Exception as e:
-        st.error(f"Cloud Error: {e}")
-    # -------------------------------
 
     # --- 7. MAIN TABS LOGIC ---
     st.markdown("<br>", unsafe_allow_html=True)
@@ -1989,6 +1978,14 @@ if data_loaded:
             if st.button("🗑️ Limpiar Chat", use_container_width=True):
                 st.session_state.messages = []
                 st.rerun()
+
+        # --- SIDEBAR CLOUD STATUS ---
+        try:
+             import cloud_manager
+             if cloud_manager.check_cloud_status():
+                 st.sidebar.success("☁️ Memoria: Online")
+        except: pass
+        # ----------------------------
         
         # -------------------------------
                 
