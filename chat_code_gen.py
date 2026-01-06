@@ -65,6 +65,15 @@ def build_schemas_context(data_dict: Dict[str, pd.DataFrame]) -> str:
     
     schemas.append("=== AVAILABLE DATAFRAMES ===\n")
     
+    # 1. Processed DataFrames (Top Level)
+    for name, obj in data_dict.items():
+        if name == 'ai_raw': continue
+        if isinstance(obj, pd.DataFrame) and not obj.empty:
+             schemas.append(get_dataframe_schema(obj, name, sample_rows=2))
+             schemas.append("\n" + "-"*30 + "\n")
+
+    # 2. Raw DataFrames
+    ai_raw = data_dict.get('ai_raw', {})
     for name, df in ai_raw.items():
         if isinstance(df, pd.DataFrame) and not df.empty:
             # Sync with execution env: sanitise names
@@ -110,7 +119,15 @@ def execute_generated_code(code: str, data_context: Dict[str, pd.DataFrame]) -> 
         }
     }
     
-    # Add DataFrames to namespace
+    }
+    
+    # Add Processed DataFrames to namespace
+    for name, obj in data_context.items():
+        if name == 'ai_raw': continue
+        if isinstance(obj, pd.DataFrame):
+            safe_globals[name] = obj
+            
+    # Add Raw DataFrames to namespace
     for name, df in ai_raw.items():
         # Make DataFrame accessible by clean variable name
         clean_name = name.replace('-', '_').replace(' ', '_')
