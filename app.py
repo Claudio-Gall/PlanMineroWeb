@@ -79,7 +79,7 @@ def load_css():
     except FileNotFoundError:
         st.error("⚠️ CSS File not found.")
 
-load_css()
+# load_css() # DEACTIVATED FOR DEBUGGING
 
 # --- 2.1 HELPER DE CARGA FLOTAS (Long Format) ---
 def load_long_format_data(file_path, sheet_name, header_row=0):
