@@ -367,10 +367,20 @@ Generate code now:"""
             
             # Format result
             answer_md = self._format_result(result, code, from_cache=False)
+            
+            # LOGGING: Save full conversation to Cloud
+            if cloud_manager and cloud_manager.check_cloud_status():
+                 cloud_manager.save_conversation_cloud(question, answer_md)
+                 
             return {'type': 'text', 'content': answer_md}
         
         except Exception as e:
             error_msg = f"Error ejecutando código:\n```python\n{code}\n```\n\nError: {str(e)}"
+            
+            # LOGGING: Save error to Cloud
+            if cloud_manager and cloud_manager.check_cloud_status():
+                 cloud_manager.save_conversation_cloud(question, error_msg)
+                 
             return {'type': 'error', 'content': error_msg}
 
     def _format_result(self, result, code, from_cache=False):
