@@ -1819,9 +1819,11 @@ def load_data_v5():
         return None
 
 # --- MAIN APP FLOW ---
+st.write("📂 Cargando datos (load_data_v5)...")
 data_loaded = load_data_v5()
 
 if data_loaded:
+    st.write("✅ Datos cargados correctamente. Renderizando Dashboard...")
     df = data_loaded.get('planta', pd.DataFrame())
     df_fleet = data_loaded.get('fleet', pd.DataFrame())
     df_perfos = data_loaded.get('perfos', pd.DataFrame())
