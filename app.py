@@ -1979,13 +1979,8 @@ if data_loaded:
                 st.session_state.messages = []
                 st.rerun()
 
-        # --- SIDEBAR CLOUD STATUS ---
-        try:
-             import cloud_manager
-             if cloud_manager.check_cloud_status():
-                 st.sidebar.success("☁️ Memoria: Online")
-        except: pass
-        # ----------------------------
+        
+        # -------------------------------
         
         # -------------------------------
                 
