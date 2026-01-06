@@ -85,7 +85,7 @@ def load_css():
     except FileNotFoundError:
         st.error("⚠️ CSS File not found.")
 
-# load_css() # DEACTIVATED FOR DEBUGGING
+load_css()
 
 # --- 2.1 HELPER DE CARGA FLOTAS (Long Format) ---
 def load_long_format_data(file_path, sheet_name, header_row=0):
@@ -1819,11 +1819,11 @@ def load_data_v5():
         return None
 
 # --- MAIN APP FLOW ---
-st.write("📂 Cargando datos (load_data_v5)...")
+# --- MAIN APP FLOW ---
 data_loaded = load_data_v5()
 
 if data_loaded:
-    st.write("✅ Datos cargados correctamente. Renderizando Dashboard...")
+    # st.write("✅ Datos cargados correctamente. Renderizando Dashboard...")
     df = data_loaded.get('planta', pd.DataFrame())
     df_fleet = data_loaded.get('fleet', pd.DataFrame())
     df_perfos = data_loaded.get('perfos', pd.DataFrame())
