@@ -1,18 +1,24 @@
 import streamlit as st
-import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-import altair as alt
-import fleet_v3  # Auxiliary functions (perfos, servicios)
-import fleet_loader  # Fleet data loader (final clean version)
-import adapter_v4  # Data adapter
-import importlib  # For dynamic reloading
-from chat_code_gen import CodeGenerationChatAgent
-import google.generativeai as genai
-import os
-import random
-import base64
-import numpy as np
+st.write("🔄 **CARGANDO SISTEMA DE PLANIFICACIÓN... (Si lees esto, el servidor funciona)**")
+
+try:
+    import pandas as pd
+    import plotly.express as px
+    import plotly.graph_objects as go
+    import altair as alt
+    import fleet_v3  # Auxiliary functions (perfos, servicios)
+    import fleet_loader  # Fleet data loader (final clean version)
+    import adapter_v4  # Data adapter
+    import importlib  # For dynamic reloading
+    from chat_code_gen import CodeGenerationChatAgent
+    import google.generativeai as genai
+    import os
+    import random
+    import base64
+    import numpy as np
+except Exception as e:
+    st.error(f"❌ CRASH AL INICIAR: {e}")
+    st.stop()
 
 # FORCE RELOAD to clear module cache
 importlib.reload(fleet_v3)
