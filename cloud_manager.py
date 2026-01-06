@@ -129,9 +129,21 @@ def save_conversation_cloud(question, answer, user_id="anonymous"):
             "question": question,
             "answer": answer,
             "user_id": user_id,
-            "timestamp": firestore.SERVER_TIMESTAMP
+            "timestamp": datetime.datetime.now() # Use local python time to be safe
         }
+        # 1. Save to conversations
         db.collection("conversations").add(data)
+        
+        # 2. DEBUG: Force write to 'training_examples' so user sees it
+        debug_data = {
+            "question_pattern": "DEBUG_LOG: " + question[:20],
+            "answer_code": "LOGGED TO CONVERSATIONS",
+            "sheet_name": "DEBUG",
+            "verified": True,
+            "created_at": datetime.datetime.now()
+        }
+        db.collection("training_examples").add(debug_data)
+        
     except Exception as e:
         print(f"Cloud Logging Error: {e}")
 
