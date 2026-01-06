@@ -119,7 +119,7 @@ def execute_generated_code(code: str, data_context: Dict[str, pd.DataFrame]) -> 
         }
     }
     
-    }
+
     
     # Add Processed DataFrames to namespace
     for name, obj in data_context.items():
