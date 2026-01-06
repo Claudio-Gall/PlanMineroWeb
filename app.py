@@ -1968,20 +1968,16 @@ if data_loaded:
                 st.session_state.messages = []
                 st.rerun()
         
-        # --- CLOUD STATUS DIAGNOSTIC ---
+        # --- CLOUD STATUS DIAGNOSTIC (MAIN VIEW) ---
         try:
             import cloud_manager
             is_cloud_ok = cloud_manager.check_cloud_status()
-            status_color = "🟢" if is_cloud_ok else "🔴"
-            status_text = "Conectada (Online)" if is_cloud_ok else "Desconectada (Offline)"
-            
-            with st.sidebar:
-                st.markdown("---")
-                st.markdown(f"**Memoria Cloud:** {status_color} {status_text}")
-                if not is_cloud_ok:
-                    st.caption("Verifica 'secrets' en Streamlit Cloud.")
+            if is_cloud_ok:
+                st.success("🟢 Memoria Cloud: Conectada (Online)")
+            else:
+                st.error("🔴 Memoria Cloud: Desconectada (Verifica Secrets)")
         except Exception as e:
-            st.sidebar.error(f"Cloud Error: {e}")
+            st.error(f"Cloud Error: {e}")
         # -------------------------------
                 
         # Initialize Agent
