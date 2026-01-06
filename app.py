@@ -1965,6 +1965,7 @@ if data_loaded:
         col_header, col_clear = st.columns([10, 2])
         with col_header: st.title("Asistente Virtual Plan Minero")
         with col_clear: 
+            if st.button("🗑️ Limpiar Chat", use_container_width=True):
                 st.session_state.messages = []
                 st.rerun()
         
