@@ -1965,9 +1965,24 @@ if data_loaded:
         col_header, col_clear = st.columns([10, 2])
         with col_header: st.title("Asistente Virtual Plan Minero")
         with col_clear: 
-            if st.button("🗑️ Limpiar Chat", use_container_width=True):
                 st.session_state.messages = []
                 st.rerun()
+        
+        # --- CLOUD STATUS DIAGNOSTIC ---
+        try:
+            import cloud_manager
+            is_cloud_ok = cloud_manager.check_cloud_status()
+            status_color = "🟢" if is_cloud_ok else "🔴"
+            status_text = "Conectada (Online)" if is_cloud_ok else "Desconectada (Offline)"
+            
+            with st.sidebar:
+                st.markdown("---")
+                st.markdown(f"**Memoria Cloud:** {status_color} {status_text}")
+                if not is_cloud_ok:
+                    st.caption("Verifica 'secrets' en Streamlit Cloud.")
+        except Exception as e:
+            st.sidebar.error(f"Cloud Error: {e}")
+        # -------------------------------
                 
         # Initialize Agent
         if 'chat_agent_inst' not in st.session_state:
