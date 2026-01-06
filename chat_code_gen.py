@@ -20,6 +20,7 @@ Architecture:
 import pandas as pd
 import streamlit as st
 import re
+import matplotlib.pyplot as plt
 from typing import Dict, Any
 
 def get_dataframe_schema(df: pd.DataFrame, name: str, sample_rows=2) -> str:
@@ -96,6 +97,7 @@ def execute_generated_code(code: str, data_context: Dict[str, pd.DataFrame]) -> 
     # Create safe globals with only Pandas and our data
     safe_globals = {
         'pd': pd,
+        'plt': plt,
         '__builtins__': {
             'len': len,
             'str': str,
