@@ -1979,8 +1979,30 @@ if data_loaded:
                 st.session_state.messages = []
                 st.rerun()
 
-        
-        # -------------------------------
+        # --- SIDEBAR CLOUD STATUS ---
+        try:
+             import cloud_manager
+             if cloud_manager.check_cloud_status():
+                 st.sidebar.success("☁️ Memoria: Online")
+                 
+                 # DEBUG: Explicit Write Test
+                 if st.sidebar.button("🛠️ Test Write"):
+                    try:
+                        db = cloud_manager.get_db_connection()
+                        # Use a safe collection 'diagnostics'
+                        db.collection("diagnostics").add({
+                            "test": "connectivity_check", 
+                            "user": "admin",
+                            "status": "ok"
+                        })
+                        st.sidebar.success("✅ Write OK!")
+                        st.toast("✅ Escritura en Firebase EXITOSA")
+                    except Exception as e:
+                        st.sidebar.error(f"❌ Error: {e}")
+                        st.error(f"FIREBASE ERROR: {e}")
+                        
+        except: pass
+        # ----------------------------
         
         # -------------------------------
                 
