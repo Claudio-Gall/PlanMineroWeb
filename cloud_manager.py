@@ -24,11 +24,22 @@ def get_db_connection():
     try:
         # Option 1: Load from streamlit secrets (deploy ready)
         if "firestore" in st.secrets:
-            key_dict = dict(st.secrets["firestore"]) # Convert to mutable dict
+            key_dict = dict(st.secrets["firestore"])
             
-            # CRITICAL FIX: Ensure private_key has real newlines, not escaped strings
-            if "private_key" in key_dict:
-                key_dict["private_key"] = key_dict["private_key"].replace("\\n", "\n")
+            # --- DEBUG: KEY INSPECTION ---
+            pk = key_dict.get("private_key", "")
+            print(f"🔑 Key Debug: Length={len(pk)}")
+            print(f"🔑 First 50 chars (Repr): {repr(pk[:50])}")
+            print(f"🔑 Contains literal \\n: {'\\n' in pk}")
+            print(f"🔑 Contains real newline: {'\n' in pk}")
+            
+            # Auto-Fix Attempts
+            if "\\n" in pk:
+                print("🔧 Fixing literal \\n to real newlines...")
+                pk = pk.replace("\\n", "\n")
+            
+            key_dict["private_key"] = pk
+            # -----------------------------
             
             creds = service_account.Credentials.from_service_account_info(key_dict)
             db = firestore.Client(credentials=creds)
