@@ -1979,35 +1979,41 @@ if data_loaded:
                 st.session_state.messages = []
                 st.rerun()
 
-        # --- SIDEBAR CLOUD STATUS ---
         try:
              import cloud_manager
-             if cloud_manager.check_cloud_status():
+             is_online = cloud_manager.check_cloud_status()
+             
+             if is_online:
                  st.sidebar.success("☁️ Memoria: Online")
-                 
-                 # DEBUG: Explicit Write Test
-                 if st.sidebar.button("🛠️ Test Write"):
-                    try:
-                        db = cloud_manager.get_db_connection()
-                        # Use a safe collection 'diagnostics'
-                        db.collection("diagnostics").add({
-                            "test": "connectivity_check", 
-                            "user": "admin",
-                            "status": "ok"
-                        })
-                        st.sidebar.success("✅ Write OK!")
-                        st.toast("✅ Escritura en Firebase EXITOSA")
-                    except Exception as e:
-                        st.sidebar.error(f"❌ Error: {e}")
+             else:
+                 st.sidebar.error("☁️ Memoria: Offline")
+             
+             # DEBUG: Explicit Write Test (ALWAYS VISIBLE)
+             if st.sidebar.button("🛠️ Test Write"):
+                try:
+                    db = cloud_manager.get_db_connection()
+                    if not db:
+                        raise Exception("DB Connection returned None (Check Secrets)")
                         
-                        # SHOW KEY DEBUG INFO ON SCREEN
-                        debug_info = cloud_manager.get_key_debug_stats()
-                        st.sidebar.code(f"Key Debug:\n{debug_info}", language="json")
-                        st.error(f"FIREBASE ERROR: {e}")
-                        st.warning(f"Key Matrix: {debug_info}")
+                    # Use a safe collection 'diagnostics'
+                    db.collection("diagnostics").add({
+                        "test": "connectivity_check", 
+                        "user": "admin",
+                        "status": "ok"
+                    })
+                    st.sidebar.success("✅ Write OK!")
+                    st.toast("✅ Escritura en Firebase EXITOSA")
+                except Exception as e:
+                    st.sidebar.error(f"❌ Error: {e}")
+                    
+                    # SHOW KEY DEBUG INFO ON SCREEN
+                    debug_info = cloud_manager.get_key_debug_stats()
+                    st.sidebar.code(f"Key Debug:\n{debug_info}", language="json")
+                    st.error(f"FIREBASE ERROR: {e}")
+                    st.warning(f"Key Matrix: {debug_info}")
                         
-        except: pass
-        # ----------------------------
+        except Exception as e:
+            st.sidebar.error(f"Cloud Module Error: {e}")
         
         # -------------------------------
                 
