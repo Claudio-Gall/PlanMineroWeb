@@ -403,6 +403,10 @@ def load_data_v3():
             # Image shows Header at Row 3 (Index 2)
             df_costos = pd.read_excel(file_path, sheet_name='Costos', header=2, engine='openpyxl')
             
+            # 1. Fix Merged "Año" Column (CRITICAL: Valid only in first row of block)
+            if 'Año' in df_costos.columns:
+                df_costos['Año'] = df_costos['Año'].ffill()
+            
             # Normalize Cost Helpers
             def clean_cost_period(p):
                 p = str(p).strip()
@@ -423,9 +427,14 @@ def load_data_v3():
                     'mina': pd.to_numeric(row['Costo Mina'], errors='coerce') or 0.0,
                     'planta': pd.to_numeric(row['Costo Planta'], errors='coerce') or 0.0
                 }
+            
+            # DEBUG: Print sample to verify loading (Visible in logs)
+            print(f"DEBUG COSTOS SAMPLE: Keys={list(cost_lookup.keys())[:3]}, Val={list(cost_lookup.values())[:3]}")
+                
         except Exception as e:
             print(f"Warning loading Costos: {e}")
             cost_lookup = {}
+            # st.error(f"Error Costos: {e}") # Uncomment if user needs to see it
 
         months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
         quarters = ['Q1', 'Q2', 'Q3', 'Q4']
