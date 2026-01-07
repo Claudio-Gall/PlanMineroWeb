@@ -165,5 +165,20 @@ def save_conversation_cloud(question, answer, user_id="anonymous"):
 
 def check_cloud_status():
     """Returns True if cloud is connected."""
-    db = get_db_connection()
     return db is not None
+
+def get_key_debug_stats():
+    """Returns safe debug info about the loaded private key."""
+    try:
+        if "firestore" in st.secrets:
+            pk = dict(st.secrets["firestore"]).get("private_key", "")
+            return {
+                "length": len(pk),
+                "has_literal_slash_n": "\\n" in pk,
+                "has_real_newline": "\n" in pk,
+                "first_10_chars": repr(pk[:10]),
+                "last_10_chars": repr(pk[-10:])
+            }
+        return "No 'firestore' in secrets"
+    except Exception as e:
+        return f"Error analyzing key: {e}"

@@ -1999,7 +1999,12 @@ if data_loaded:
                         st.toast("✅ Escritura en Firebase EXITOSA")
                     except Exception as e:
                         st.sidebar.error(f"❌ Error: {e}")
+                        
+                        # SHOW KEY DEBUG INFO ON SCREEN
+                        debug_info = cloud_manager.get_key_debug_stats()
+                        st.sidebar.code(f"Key Debug:\n{debug_info}", language="json")
                         st.error(f"FIREBASE ERROR: {e}")
+                        st.warning(f"Key Matrix: {debug_info}")
                         
         except: pass
         # ----------------------------
