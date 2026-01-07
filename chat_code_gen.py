@@ -277,6 +277,7 @@ class CodeGenerationChatAgent:
         - "Pala" / "Equipo" -> Column: 'Equipo' OR Prefix in KPI sheets (e.g., 'P06_' for Pala 6)
         - "Periodo" -> Columns: 'Periodo', 'Mes', 'Año' (Filter by Year/Month)
         - "Rendimiento" / "Rend" -> Columns: 'RenDPala', 'Rendimiento', 'Rend_Efectivo' (NEVER use %UsoReal for this)
+        - "Costo" -> Columns: 'Costo_Mina', 'Costo_Planta' (Unit: $/t)
         """
 
         system_prompt = f"""You are a Python Pandas code generator for mining data analysis.
@@ -324,14 +325,27 @@ INSTRUCTIONS:
    - **Ton / Movimiento / Rendimiento**: INTEGER (No decimals).
    - **Columns**: RETURN ONLY WHAT IS ASKED. If user asks "Tratamiento", do NOT allow "Ley" columns in result.
 9. Output ONLY the Python code in a ```python code block
+10. **PLOTTING RULES (If user asks for graph/chart/plot)**:
+    - Import matplotlib inside the code: `import matplotlib.pyplot as plt`
+    - Create a figure: `fig, ax = plt.subplots(figsize=(10, 6))`
+    - Plot data: `ax.plot(...)` or `ax.bar(...)`
+    - Style: `plt.style.use('dark_background')` (matches UI)
+    - Labels: Set `ax.set_title(...)`, `ax.set_xlabel(...)`
+    - **IMPORTANT**: Assign the figure to result: `result = fig`
+    - Do NOT use `st.pyplot()`, just return `fig` via `result`.
 
-EXAMPLE for "usos reales pala 6 2027":
+EXAMPLE for "graficar rendimiento pala 6":
 ```python
-# Note: Columns have prefixes like P06_PctUsoReal due to header flattening
-df = KPI_Palas[KPI_Palas['Año'] == 2027]
-result = df[['Periodo', 'P06_PctUsoReal']].copy()
-# Format as percentage INTEGER (0.82 -> 82)
-result['P06_PctUsoReal'] = (result['P06_PctUsoReal'] * 100).round(0).astype(int)
+import matplotlib.pyplot as plt
+df = KPI_Palas[KPI_Palas['Año'] == 2026]
+df = df.sort_values('Periodo_Num') # Ensure chronological order
+
+plt.style.use('dark_background')
+fig, ax = plt.subplots(figsize=(10, 5))
+ax.plot(df['Periodo'], df['P06_Rendimiento'], marker='o', color='#00f2ff', linewidth=2)
+ax.set_title('Rendimiento Pala 6 - 2026')
+ax.grid(True, alpha=0.2)
+result = fig
 ```
 
 Generate code now:"""
@@ -356,19 +370,25 @@ Generate code now:"""
             
             # 4. SAVE TO CLOUD (Hive Mind Learning)
             if cloud_manager and cloud_manager.check_cloud_status():
-                # We save successful patterns to make the hive smarter
-                # We use the USER question as the pattern for now
                 cloud_manager.save_training_example_cloud(
                     question_pattern=question,
                     answer_code=code,
                     sheet_name="Auto-Learned",
-                    verified=True # Auto-verified if it runs? Maybe set False nicely.
+                    verified=True
                 )
             
-            # Format result
+            # CHECK IF RESULT IS A PLOT
+            import matplotlib.figure
+            if isinstance(result, matplotlib.figure.Figure):
+                # LOGGING (Save conversation with note about plot)
+                if cloud_manager and cloud_manager.check_cloud_status():
+                     cloud_manager.save_conversation_cloud(question, "[GRAPH GENERATED]")
+                return {'type': 'plot', 'content': result}
+            
+            # Format result (Text/Table)
             answer_md = self._format_result(result, code, from_cache=False)
             
-            # LOGGING: Save full conversation to Cloud
+            # LOGGING
             if cloud_manager and cloud_manager.check_cloud_status():
                  cloud_manager.save_conversation_cloud(question, answer_md)
                  

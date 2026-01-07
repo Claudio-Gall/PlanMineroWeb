@@ -398,6 +398,35 @@ def load_data_v3():
                    res = [a + b for a, b in zip(res, s)]
             return res
 
+        # NEW: LOAD COSTOS
+        try:
+            # Image shows Header at Row 3 (Index 2)
+            df_costos = pd.read_excel(file_path, sheet_name='Costos', header=2, engine='openpyxl')
+            
+            # Normalize Cost Helpers
+            def clean_cost_period(p):
+                p = str(p).strip()
+                if "1er Trimestre" in p: return "Q1"
+                if "2do Trimestre" in p: return "Q2"
+                if "3er Trimestre" in p: return "Q3"
+                if "4to Trimestre" in p: return "Q4"
+                return p # Enero, Febrero, etc.
+
+            df_costos['Year'] = pd.to_numeric(df_costos['Año'], errors='coerce').fillna(0).astype(int)
+            df_costos['Period_Clean'] = df_costos['Periodo'].apply(clean_cost_period)
+            
+            # Create Lookup: (Year, Period) -> {Mina, Planta}
+            cost_lookup = {}
+            for _, row in df_costos.iterrows():
+                key = (row['Year'], row['Period_Clean'])
+                cost_lookup[key] = {
+                    'mina': pd.to_numeric(row['Costo Mina'], errors='coerce') or 0.0,
+                    'planta': pd.to_numeric(row['Costo Planta'], errors='coerce') or 0.0
+                }
+        except Exception as e:
+            print(f"Warning loading Costos: {e}")
+            cost_lookup = {}
+
         months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
         quarters = ['Q1', 'Q2', 'Q3', 'Q4']
         
@@ -434,8 +463,9 @@ def load_data_v3():
             # Stock a Stock (Doble Remanejo AK 37)
             v_stock_stock = extract_flow_sum(df_envios_filled, ['remanejo'], '*', ['stockdr', 'doble remanejo'], ['humedas'], cols_e)
             
-            # NOTE: v_mina_bot + v_relleno_bot from DT logic. Replaced by Envios.
-            # v_relleno_bot = extract_flow_sum(df_dt_filled, ['mina'], '*', ['relleno'], ['botadero', 'botaderos'], cols_d)
+            # COST LOOKUP
+            c_mina = [cost_lookup.get((y, l), {}).get('mina', 0.0) for l in lbls]
+            c_planta = [cost_lookup.get((y, l), {}).get('planta', 0.0) for l in lbls]
 
             df_b = pd.DataFrame({
                 'Periodo': [f"{l} {y}" for l in lbls],
@@ -453,8 +483,8 @@ def load_data_v3():
                 'Mov_F05': [a+b for a,b in zip(v_f05, v_f05c)],
                 'Remanejo': v_rem,
                 'Palas_Capacidad': [0.0]*len(lbls), # Placeholder for future logic
-                'Costo_Mina': [0.0]*len(lbls),
-                'Costo_Planta': [0.0]*len(lbls),
+                'Costo_Mina': c_mina,
+                'Costo_Planta': c_planta,
                 # Sankey Flows
                 'Flow_Mina_Planta': v_mina_planta,
                 'Flow_Mina_Stock': v_mina_stock,
@@ -487,6 +517,11 @@ def load_data_v3():
         df_perfos = generate_period_column(df_perfos)
         df_serv = generate_period_column(df_serv)
         
+        # ADD COSTOS TO AI CONTEXT
+        # Already merged into 'planta' (df_final), so it's implicit in columns 'Costo_Mina', 'Costo_Planta'.
+        # No need for separate context Unless we want robust raw access.
+        # But for 'dashboard' context, it's there.
+        
         return {
             'planta': df_final,
             'camiones_long': df_cam_long,
@@ -500,13 +535,6 @@ def load_data_v3():
         import traceback
         st.error(f"Error load_data: {e}")
         st.code(traceback.format_exc())
-        return {
-            'planta': pd.DataFrame(),
-            'camiones_long': pd.DataFrame(),
-            'fleet': pd.DataFrame(),
-            'perfos': pd.DataFrame(),
-            'servicios': pd.DataFrame()
-        }
 
 # --- GLOBAL DATA LOAD (LEGACY SUPPORT) ---
 # Some functions might rely on 'df' being available globally.
@@ -1978,142 +2006,117 @@ if data_loaded:
             if st.button("🗑️ Limpiar Chat", use_container_width=True):
                 st.session_state.messages = []
                 st.rerun()
-
-        try:
-             import cloud_manager
-             is_online = cloud_manager.check_cloud_status()
-             
-             if is_online:
-                 st.sidebar.success("☁️ Memoria: Online")
-             else:
-                 st.sidebar.error("☁️ Memoria: Offline")
-             
-             # DEBUG: Explicit Write Test (ALWAYS VISIBLE)
-             if st.sidebar.button("🛠️ Test Write"):
-                try:
-                    db = cloud_manager.get_db_connection()
-                    if not db:
-                        raise Exception("DB Connection returned None (Check Secrets)")
-                        
-                    # Use a safe collection 'diagnostics'
-                    db.collection("diagnostics").add({
-                        "test": "connectivity_check", 
-                        "user": "admin",
-                        "status": "ok"
-                    })
-                    st.sidebar.success("✅ Write OK!")
-                    st.toast("✅ Escritura en Firebase EXITOSA")
-                except Exception as e:
-                    st.sidebar.error(f"❌ Error: {e}")
-                    
-                    # SHOW KEY DEBUG INFO ON SCREEN
-                    debug_info = cloud_manager.get_key_debug_stats()
-                    st.sidebar.code(f"Key Debug:\n{debug_info}", language="json")
-                    st.error(f"FIREBASE ERROR: {e}")
-                    st.warning(f"Key Matrix: {debug_info}")
-                        
-        except Exception as e:
-            st.sidebar.error(f"Cloud Module Error: {e}")
         
-        # -------------------------------
-                
-        # Initialize Agent
-        if 'chat_agent_inst' not in st.session_state:
-            try:
-                # NEW MULTI-CONTEXT INIT V2 (RAW AI)
-                data_context = {
-                    'planta': df,
-                    'fleet': df_fleet, 
-                    'perfos': df_perfos,
-                    'servicios': df_serv,
-                    'ai_raw': ai_raw_context # PROCESSED RAW DATA
-                }
-                agent = CodeGenerationChatAgent(data_context)
-                
-                # LOAD KEY SAFELY
-                try:
-                    api_key = st.secrets["GEMINI_API_KEY"]
-                except:
-                    api_key = os.environ.get("GEMINI_API_KEY")
-                
-                agent.initialize(api_key=api_key)
-                st.session_state['chat_agent_inst'] = agent
-            except Exception as e:
-                st.error(f"Error iniciando IA: {e}")
-                
-        # Initialize History
-        if "messages" not in st.session_state:
-            st.session_state.messages = []
-
-        # Display History or Welcome Screen
-        if not st.session_state.messages:
-
-            st.markdown(f"""
-                <style>
-                    .chat-welcome {{
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        justify-content: center;
-                        height: 60vh;
-                        text-align: center;
-                    }}
-                    .chat-welcome h1 {{
-                        font-family: 'Google Sans', sans-serif;
-                        font-size: 4rem;
-                        font-weight: 500;
-                        color: #ffffff;
-                        margin-bottom: 1rem;
-                        background: linear-gradient(90deg, #4285F4, #9B72CB, #D96570);
-                        -webkit-background-clip: text;
-                        -webkit-text-fill-color: transparent;
-                    }}
-                    .chat-welcome p {{
-                        font-size: 1.5rem;
-                        color: #bdc1c6;
-                        max-width: 600px;
-                    }}
-                </style>
-                <div class="chat-welcome">
-                    <h1>Descubre el Modo IA</h1>
-                    <p>Haz preguntas detalladas para obtener mejores respuestas</p>
-                </div>
-            """, unsafe_allow_html=True)
-            # SUGGESTIONS REMOVED AS REQUESTED
-        else:
-            for message in st.session_state.messages:
-                with st.chat_message(message["role"]):
-                    if message.get("type") == "text":
-                        st.markdown(message["content"])
-                    elif message.get("type") == "dataframe":
-                        st.dataframe(message["content"], hide_index=True, use_container_width=True)
-                    elif message.get("type") == "plot":
-                        st.plotly_chart(message["content"])
-
-        # Input
-        if prompt := st.chat_input("Escribe tu pregunta minera aquí..."):
-            # Display User Message
-            st.chat_message("user").markdown(prompt)
-            st.session_state.messages.append({"role": "user", "content": prompt, "type": "text"})
+        # --- CHAT INTERFACE ---
+        if current_view == "🤖 Chat IA":
             
-            # Generate Answer
-            with st.spinner("Analizando datos..."):
-                agent = st.session_state.get('chat_agent_inst')
-                if agent:
-                    response = agent.ask(prompt, history=st.session_state.messages)
+            # Initialize Agent
+            if 'chat_agent_inst' not in st.session_state:
+                try:
+                    # NEW MULTI-CONTEXT INIT V2 (RAW AI)
+                    data_context = {
+                        'planta': df,
+                        'fleet': df_fleet, 
+                        'perfos': df_perfos,
+                        'servicios': df_serv,
+                        'ai_raw': ai_raw_context # PROCESSED RAW DATA
+                    }
+                    agent = CodeGenerationChatAgent(data_context)
                     
-                    # Display AI Message
-                    with st.chat_message("assistant"):
-                        if response['type'] == 'text':
-                            st.markdown(response['content'])
-                        elif response['type'] == 'error':
-                            st.error(response['content'])
-                            with st.expander("Ver Código Generado"):
-                                st.code(response.get('code', ''), language='python')
-                        elif response['type'] == 'dataframe':
-                            st.dataframe(response['content'], hide_index=True, use_container_width=True)
-                        elif response['type'] == 'plot':
-                            st.plotly_chart(response['content'])
+                    # LOAD KEY SAFELY
+                    try:
+                        api_key = st.secrets["GEMINI_API_KEY"]
+                    except:
+                        api_key = os.environ.get("GEMINI_API_KEY")
+                    
+                    agent.initialize(api_key=api_key)
+                    st.session_state['chat_agent_inst'] = agent
+                except Exception as e:
+                    st.error(f"Error iniciando IA: {e}")
+                    
+            # Initialize History
+            if "messages" not in st.session_state:
+                st.session_state.messages = []
+
+            # Display History or Welcome Screen
+            if not st.session_state.messages:
+
+                st.markdown(f"""
+                    <style>
+                        .chat-welcome {{
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            height: 60vh;
+                            text-align: center;
+                        }}
+                        .chat-welcome h1 {{
+                            font-family: 'Google Sans', sans-serif;
+                            font-size: 4rem;
+                            font-weight: 500;
+                            color: #ffffff;
+                            margin-bottom: 1rem;
+                            background: linear-gradient(90deg, #4285F4, #9B72CB, #D96570);
+                            -webkit-background-clip: text;
+                            -webkit-text-fill-color: transparent;
+                        }}
+                        .chat-welcome p {{
+                            font-size: 1.5rem;
+                            color: #bdc1c6;
+                            max-width: 600px;
+                        }}
+                    </style>
+                    <div class="chat-welcome">
+                        <h1>Descubre el Modo IA</h1>
+                        <p>Haz preguntas detalladas para obtener mejores respuestas</p>
+                    </div>
+                """, unsafe_allow_html=True)
+                # SUGGESTIONS REMOVED AS REQUESTED
+            else:
+                for message in st.session_state.messages:
+                    with st.chat_message(message["role"]):
+                        if message.get("type") == "text":
+                            st.markdown(message["content"])
+                        elif message.get("type") == "dataframe":
+                            st.dataframe(message["content"], hide_index=True, use_container_width=True)
+                        elif message.get("type") == "plot":
+                            # Support both Matplotlib and Plotly
+                            import matplotlib.figure
+                            if isinstance(message["content"], matplotlib.figure.Figure):
+                                st.pyplot(message["content"])
+                            else:
+                                st.plotly_chart(message["content"])
+
+            # Input
+            if prompt := st.chat_input("Escribe tu pregunta minera aquí..."):
+                # Display User Message
+                st.chat_message("user").markdown(prompt)
+                st.session_state.messages.append({"role": "user", "content": prompt, "type": "text"})
+                
+                # Generate Answer
+                with st.spinner("Analizando datos..."):
+                    agent = st.session_state.get('chat_agent_inst')
+                    if agent:
+                        response = agent.ask(prompt, history=st.session_state.messages)
+                        
+                        # Display AI Message
+                        with st.chat_message("assistant"):
+                            if response['type'] == 'text':
+                                st.markdown(response['content'])
+                            elif response['type'] == 'error':
+                                st.error(response['content'])
+                                with st.expander("Ver Código Generado"):
+                                    st.code(response.get('code', ''), language='python')
+                            elif response['type'] == 'dataframe':
+                                st.dataframe(response['content'], hide_index=True, use_container_width=True)
+                            elif response['type'] == 'plot':
+                                # Support both Matplotlib and Plotly
+                                import matplotlib.figure
+                                if isinstance(response['content'], matplotlib.figure.Figure):
+                                    st.pyplot(response['content'])
+                                else:
+                                    st.plotly_chart(response['content'])
                             if 'data' in response:
                                 with st.expander("Ver Datos"):
                                     st.dataframe(response['data'])
