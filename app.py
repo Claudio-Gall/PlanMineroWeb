@@ -1817,6 +1817,8 @@ def load_data_v5():
             cols_to_fill_envios = [c for c in df_envios.columns if c not in ['Year', 'Month']]
             for c in cols_to_fill_envios:
                 if c in df_planta.columns:
+                    df_planta[c] = df_planta[c].fillna(0)
+        
         # NEW: LOAD & MERGE COSTOS (Correctly placed in v5)
         try:
             df_costos_raw = pd.read_excel(file_path, sheet_name='Costos', header=2, engine='openpyxl')
