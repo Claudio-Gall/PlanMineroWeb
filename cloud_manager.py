@@ -38,6 +38,13 @@ def get_db_connection():
                 print("🔧 Fixing literal \\n to real newlines...")
                 pk = pk.replace("\\n", "\n")
             
+            # REMOVE Windows Carriage Returns
+            pk = pk.replace("\r", "")
+            
+            # ENSURE Ending Newline (PEM standard)
+            if not pk.endswith("\n"):
+                pk += "\n"
+            
             key_dict["private_key"] = pk
             # -----------------------------
             
