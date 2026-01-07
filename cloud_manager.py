@@ -165,6 +165,7 @@ def save_conversation_cloud(question, answer, user_id="anonymous"):
 
 def check_cloud_status():
     """Returns True if cloud is connected."""
+    db = get_db_connection()
     return db is not None
 
 def get_key_debug_stats():
