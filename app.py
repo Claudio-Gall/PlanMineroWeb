@@ -1817,8 +1817,61 @@ def load_data_v5():
             cols_to_fill_envios = [c for c in df_envios.columns if c not in ['Year', 'Month']]
             for c in cols_to_fill_envios:
                 if c in df_planta.columns:
-                    df_planta[c] = df_planta[c].fillna(0)
-        
+        # NEW: LOAD & MERGE COSTOS (Correctly placed in v5)
+        try:
+            df_costos_raw = pd.read_excel(file_path, sheet_name='Costos', header=2, engine='openpyxl')
+            
+            # 1. Fix Merged 'Año'
+            if 'Año' in df_costos_raw.columns:
+                df_costos_raw['Año'] = df_costos_raw['Año'].ffill()
+
+            # 2. Prepare Match Data (Monthly & Quarterly)
+            months_data = [] # (Year, Month, Mina, Planta)
+            quarters_data = [] # (Year, Quarter, Mina, Planta)
+            
+            for _, row in df_costos_raw.iterrows():
+                y = pd.to_numeric(row['Año'], errors='coerce')
+                if pd.isna(y) or y == 0: continue
+                y = int(y)
+                
+                p_text = str(row['Periodo']).strip()
+                c_mina = pd.to_numeric(row['Costo Mina'], errors='coerce') or 0.0
+                c_planta = pd.to_numeric(row['Costo Planta'], errors='coerce') or 0.0
+                
+                if "Trimestre" in p_text:
+                    q = "Q1" if "1er" in p_text else "Q2" if "2do" in p_text else "Q3" if "3er" in p_text else "Q4"
+                    quarters_data.append({'Year': y, 'Quarter': q, 'CM_Q': c_mina, 'CP_Q': c_planta})
+                else:
+                    months_data.append({'Year': y, 'Month': p_text, 'CM_M': c_mina, 'CP_M': c_planta})
+            
+            # 3. Merge Monthly Matches
+            if months_data:
+                df_m_costs = pd.DataFrame(months_data)
+                if not df_planta.empty:
+                    df_planta = pd.merge(df_planta, df_m_costs, on=['Year', 'Month'], how='left')
+            
+            # 4. Merge Quarterly Matches
+            if quarters_data and 'Quarter' in df_planta.columns:
+                df_q_costs = pd.DataFrame(quarters_data)
+                if not df_planta.empty:
+                    df_planta = pd.merge(df_planta, df_q_costs, on=['Year', 'Quarter'], how='left')
+            
+            # 5. Consolidate into official columns
+            # Prioritize Month match, fallback to Quarter match, fallback to 0
+            if not df_planta.empty:
+                # Ensure source columns exist
+                for c in ['CM_M', 'CP_M', 'CM_Q', 'CP_Q']:
+                    if c not in df_planta.columns: df_planta[c] = pd.NA
+
+                df_planta['Costo_Mina'] = df_planta['CM_M'].fillna(df_planta['CM_Q']).fillna(0.0)
+                df_planta['Costo_Planta'] = df_planta['CP_M'].fillna(df_planta['CP_Q']).fillna(0.0)
+                
+                # Cleanup
+                df_planta.drop(columns=['CM_M', 'CP_M', 'CM_Q', 'CP_Q'], inplace=True, errors='ignore')
+
+        except Exception as e:
+            print(f"Error merging Costos in V5: {e}")
+            
         # Load Fleet Data (Clean Loader V2 - Fixed Period Mapping)
         df_fleet = fleet_loader.load_fleet_clean(file_path)
         
