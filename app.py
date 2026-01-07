@@ -2129,8 +2129,8 @@ if data_loaded:
                         "content": response['content'], 
                         "type": response['type']
                     })
-                else:
-                    st.error("Agente no inicializado.")
+                    else:
+                        st.error("Agente no inicializado.")
 
 else:
     st.error("No se pudieron cargar los datos. Verifica el archivo Excel.")
