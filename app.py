@@ -2121,14 +2121,12 @@ if data_loaded:
                                 with st.expander("Ver Datos"):
                                     st.dataframe(response['data'])
                     
-                    # Store in History
-                    # Note: We can't store Plotly objects easily in session state persistence if simple pickle? 
-                    # Streamlit handles it fine usually.
-                    st.session_state.messages.append({
-                        "role": "assistant", 
-                        "content": response['content'], 
-                        "type": response['type']
-                    })
+                        # Store in History (INDENTED INSIDE IF)
+                        st.session_state.messages.append({
+                            "role": "assistant", 
+                            "content": response['content'], 
+                            "type": response['type']
+                        })
                     else:
                         st.error("Agente no inicializado.")
 
