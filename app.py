@@ -1029,16 +1029,14 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
                 tooltip=['Periodo', 'Cobre_Fino', 'Ley_CuT']
             )
             
-            # Labels for Cobre Fino (Vertical, inside or above)
-            text_bars = base.mark_text(
-                align='center',
-                baseline='bottom',
-                dy=-5,  # Shift up
-                color='white',
-                angle=-90 # Vertical for elegance
-            ).encode(
-                text=alt.Text('Cobre_Fino', format=',.0f'), # No decimals
-                y=alt.Y('Cobre_Fino', axis=alt.Axis(title='Cobre Fino (Ton)', titleColor='#ff7f0e'))
+            # Labels for Cobre Fino (Vertical, inside)
+            text_bars = base.mark_text(dx=0, dy=10).encode( # Move specific text down (10px) to be visibly inside
+                y=alt.Y('Cobre_Fino', axis=alt.Axis(title='Cobre Fino (Ton)', titleColor='#ff7f0e')),
+                text=alt.Text('Cobre_Fino', format=',.0f'),
+                color=alt.value('white'),
+                angle=alt.value(-90), # Vertical
+                align=alt.value('right'), # Anchor at top (of bar)
+                baseline=alt.value('middle')
             )
             
             # Line for Ley CuT
@@ -1047,15 +1045,12 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
             )
             
             # Labels for Ley CuT (Small, near points)
-            text_line = base.mark_text(
-                align='left',
-                baseline='middle',
-                dx=5,
-                color='#1f77b4',
-                fontSize=10
-            ).encode(
+            text_line = base.mark_text(dx=5, dy=0).encode(
                 y=alt.Y('Ley_CuT', axis=alt.Axis(orient='right')),
-                text=alt.Text('Ley_CuT', format='.2f') # 2 decimals
+                text=alt.Text('Ley_CuT', format='.2f'),
+                color=alt.value('#1f77b4'),
+                fontSize=alt.value(10),
+                align=alt.value('left')
             )
 
             chart1 = alt.layer(bars, text_bars, line, text_line).resolve_scale(y='independent').properties(height=400) # Increased height for labels
@@ -1088,16 +1083,11 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
                 )
                 
                 # Labels for Stacked Bars (Middle of segment)
-                # Note: Stacked labels in Altair can be tricky. 
-                # Ideally we want Total labels on top, but segment labels are requested.
-                # Let's try segment labels first.
-                text_mov = base_mov.mark_text(
-                    dy=0,
-                    color='white',
-                    fontSize=9
-                ).encode(
+                text_mov = base_mov.mark_text(dy=0).encode(
                     y=alt.Y('Kton', stack='zero'),
                     text=alt.Text('Kton', format=',.0f'),
+                    color=alt.value('white'),
+                    fontSize=alt.value(9),
                     detail='Fase',
                     order=alt.Order('Fase', sort='descending'),
                     opacity=alt.condition(alt.datum.Kton > 50, alt.value(1), alt.value(0)) # Hide small labels
@@ -1130,16 +1120,13 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
                 tooltip=['Periodo', 'Trat_kTon', 'Ley_CuT']
             )
             
-            text_treat = base_treat.mark_text(
-                align='center',
-                baseline='bottom',
-                dy=-5,
-                color='white',
-                angle=0, # Horizontal looks better for kTon if distinct enough
-                fontSize=11
-            ).encode(
+            text_treat = base_treat.mark_text(dy=-5).encode(
                 y='Trat_kTon',
-                text=alt.Text('Trat_kTon', format=',.0f')
+                text=alt.Text('Trat_kTon', format=',.0f'),
+                color=alt.value('white'),
+                fontSize=alt.value(11),
+                align=alt.value('center'),
+                baseline=alt.value('bottom')
             )
             
             chart_treat = alt.layer(bars_treat, text_treat).properties(height=350)
