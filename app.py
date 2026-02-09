@@ -590,7 +590,7 @@ def load_data_v6(file_path):
         # if not df_final.empty:
         #   chk_2028 = df_final[df_final['Year']==2028]
         #   st.write(f"DEBUG FINAL DF 2028 COSTOS: {chk_2028[['Periodo', 'Costo_Mina', 'Costo_Planta']].head()}")
-
+        #   st.write(f"DEBUG FINAL DF 2028 COSTOS: {chk_2028[['Periodo', 'Costo_Mina', 'Costo_Planta']].head()}")
         return {
             'planta': df_final,
             'camiones_long': df_cam_long,
@@ -2375,6 +2375,7 @@ except Exception as e:
         st.stop()
 
 if data_bundle:
+    st.title("PLAN MINERO 2026 - 2040 🚀 (v2.1)")
     # st.write("✅ Datos cargados correctamente. Renderizando Dashboard...")
     df = data_bundle.get('planta', pd.DataFrame())
     df_fleet = data_bundle.get('fleet', pd.DataFrame())
