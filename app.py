@@ -1030,14 +1030,15 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
             )
             
             # Labels for Cobre Fino (Vertical, inside or above)
-            text_bars = bars.mark_text(
+            text_bars = base.mark_text(
                 align='center',
                 baseline='bottom',
                 dy=-5,  # Shift up
                 color='white',
                 angle=-90 # Vertical for elegance
             ).encode(
-                text=alt.Text('Cobre_Fino', format=',.0f') # No decimals
+                text=alt.Text('Cobre_Fino', format=',.0f'), # No decimals
+                y=alt.Y('Cobre_Fino', axis=alt.Axis(title='Cobre Fino (Ton)', titleColor='#ff7f0e'))
             )
             
             # Line for Ley CuT
