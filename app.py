@@ -1007,28 +1007,57 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
         g1, g2 = st.columns(2)
     
 
+
         with g1:
             st.caption("🏭 Producción & Ley")
             base = alt.Chart(df).encode(
                 x=alt.X('Periodo', 
                     sort=None,
-                    type='ordinal', # Force discrete treatment
+                    type='ordinal',
                     axis=alt.Axis(
-                        labelAngle=-90, # Vertical labels to fit all
+                        labelAngle=-90,
                         labelFontSize=10,
                         titleFontSize=11,
-                        labelOverlap=False # Force showing all labels
+                        labelOverlap=False
                     )
                 )
             )
+            
+            # Bars for Cobre Fino
             bars = base.mark_bar(color='#ff7f0e').encode(
                 y=alt.Y('Cobre_Fino', axis=alt.Axis(title='Cobre Fino (Ton)', titleColor='#ff7f0e')),
                 tooltip=['Periodo', 'Cobre_Fino', 'Ley_CuT']
             )
+            
+            # Labels for Cobre Fino (Vertical, inside or above)
+            text_bars = bars.mark_text(
+                align='center',
+                baseline='bottom',
+                dy=-5,  # Shift up
+                color='white',
+                angle=-90 # Vertical for elegance
+            ).encode(
+                text=alt.Text('Cobre_Fino', format=',.0f') # No decimals
+            )
+            
+            # Line for Ley CuT
             line = base.mark_line(color='#1f77b4', strokeWidth=3).encode(
                 y=alt.Y('Ley_CuT', axis=alt.Axis(title='Ley CuT (%)', titleColor='#1f77b4', orient='right')),
             )
-            chart1 = alt.layer(bars, line).resolve_scale(y='independent').properties(height=350)
+            
+            # Labels for Ley CuT (Small, near points)
+            text_line = base.mark_text(
+                align='left',
+                baseline='middle',
+                dx=5,
+                color='#1f77b4',
+                fontSize=10
+            ).encode(
+                y=alt.Y('Ley_CuT', axis=alt.Axis(orient='right')),
+                text=alt.Text('Ley_CuT', format='.2f') # 2 decimals
+            )
+
+            chart1 = alt.layer(bars, text_bars, line, text_line).resolve_scale(y='independent').properties(height=400) # Increased height for labels
             st.altair_chart(chart1, use_container_width=True)
 
         with g2:
@@ -1037,42 +1066,53 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
             valid_melt = [c for c in melt_cols if c in df.columns]
             if valid_melt:
                 df_melt = df.melt(id_vars=['Periodo'], value_vars=valid_melt, var_name='Fase', value_name='Kton')
-                chart2 = alt.Chart(df_melt).mark_bar().encode(
+                
+                base_mov = alt.Chart(df_melt).encode(
                     x=alt.X('Periodo', 
                         sort=None,
-                        type='ordinal', # Force discrete treatment
+                        type='ordinal',
                         axis=alt.Axis(
-                            labelAngle=-90, # Vertical labels
+                            labelAngle=-90,
                             labelFontSize=10,
                             titleFontSize=11,
-                            labelOverlap=False # Force showing all labels
+                            labelOverlap=False
                         )
-                    ),
+                    )
+                )
+                
+                bars_mov = base_mov.mark_bar().encode(
                     y=alt.Y('Kton', stack='zero'),
                     color=alt.Color('Fase', scale=alt.Scale(scheme='category10')),
                     tooltip=['Periodo', 'Fase', 'Kton']
-                ).properties(height=350)
+                )
+                
+                # Labels for Stacked Bars (Middle of segment)
+                # Note: Stacked labels in Altair can be tricky. 
+                # Ideally we want Total labels on top, but segment labels are requested.
+                # Let's try segment labels first.
+                text_mov = base_mov.mark_text(
+                    dy=0,
+                    color='white',
+                    fontSize=9
+                ).encode(
+                    y=alt.Y('Kton', stack='zero'),
+                    text=alt.Text('Kton', format=',.0f'),
+                    detail='Fase',
+                    order=alt.Order('Fase', sort='descending'),
+                    opacity=alt.condition(alt.datum.Kton > 50, alt.value(1), alt.value(0)) # Hide small labels
+                )
+
+                chart2 = alt.layer(bars_mov, text_mov).properties(height=400)
                 st.altair_chart(chart2, use_container_width=True)
 
         # --- NUEVO GRÁFICO: TRATAMIENTO (Solicitud Usuario) ---
         st.caption("⚙️ Tratamiento Planta (Periodo a Periodo)")
         
-        # Prepare Data: Trat_Planta often in Ton (from Row 14). User might want kTon? 
-        # Existing logic uses safe_sum('Trat_Planta')/1000 for KPIs (kTon). 
-        # But 'Cobre Fino' chart above uses 'Cobre_Fino' (Ton) directly.
-        # Let's show "Ton" to be consistent with source, or match the user's mental model.
-        # Usually Plant Throughput is in kTon per period if monthly/quarterly.
-        # Let's check magnitude. ~3000 Ton Cu -> ~300-400kTon Mineral?
-        # Let's check 'kpi_planta' calculation: safe_sum('Trat_Planta')/1000. So Trat_Planta is Ton.
-        
-        # We will plot 'Trat_Planta' (Ton) directly but maybe format axis as M? Or use kTon.
-        # Let's use kTon for cleaner numbers on the chart.
-        
         df_treat = df.copy()
         if 'Trat_Planta' in df_treat.columns:
             df_treat['Trat_kTon'] = df_treat['Trat_Planta'] / 1000.0
             
-            chart_treat = alt.Chart(df_treat).mark_bar(color='#00b894').encode(
+            base_treat = alt.Chart(df_treat).encode(
                 x=alt.X('Periodo', 
                     sort=None, 
                     type='ordinal',
@@ -1081,11 +1121,27 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
                         labelOverlap=False,
                         title=None
                     )
-                ),
+                )
+            )
+            
+            bars_treat = base_treat.mark_bar(color='#00b894').encode(
                 y=alt.Y('Trat_kTon', axis=alt.Axis(title='Tratamiento (kTon)')),
                 tooltip=['Periodo', 'Trat_kTon', 'Ley_CuT']
-            ).properties(height=300) # Slightly shorter
+            )
             
+            text_treat = base_treat.mark_text(
+                align='center',
+                baseline='bottom',
+                dy=-5,
+                color='white',
+                angle=0, # Horizontal looks better for kTon if distinct enough
+                fontSize=11
+            ).encode(
+                y='Trat_kTon',
+                text=alt.Text('Trat_kTon', format=',.0f')
+            )
+            
+            chart_treat = alt.layer(bars_treat, text_treat).properties(height=350)
             st.altair_chart(chart_treat, use_container_width=True)
 
 
