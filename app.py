@@ -1006,15 +1006,18 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
         st.markdown("### 📊 Gráficos Estratégicos")
         g1, g2 = st.columns(2)
     
+
         with g1:
             st.caption("🏭 Producción & Ley")
             base = alt.Chart(df).encode(
                 x=alt.X('Periodo', 
                     sort=None,
+                    type='ordinal', # Force discrete treatment
                     axis=alt.Axis(
-                        labelAngle=-45,
-                        labelFontSize=9,
-                        titleFontSize=11
+                        labelAngle=-90, # Vertical labels to fit all
+                        labelFontSize=10,
+                        titleFontSize=11,
+                        labelOverlap=False # Force showing all labels
                     )
                 )
             )
@@ -1037,10 +1040,12 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
                 chart2 = alt.Chart(df_melt).mark_bar().encode(
                     x=alt.X('Periodo', 
                         sort=None,
+                        type='ordinal', # Force discrete treatment
                         axis=alt.Axis(
-                            labelAngle=-45,
-                            labelFontSize=9,
-                            titleFontSize=11
+                            labelAngle=-90, # Vertical labels
+                            labelFontSize=10,
+                            titleFontSize=11,
+                            labelOverlap=False # Force showing all labels
                         )
                     ),
                     y=alt.Y('Kton', stack='zero'),
@@ -1048,6 +1053,40 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
                     tooltip=['Periodo', 'Fase', 'Kton']
                 ).properties(height=350)
                 st.altair_chart(chart2, use_container_width=True)
+
+        # --- NUEVO GRÁFICO: TRATAMIENTO (Solicitud Usuario) ---
+        st.caption("⚙️ Tratamiento Planta (Periodo a Periodo)")
+        
+        # Prepare Data: Trat_Planta often in Ton (from Row 14). User might want kTon? 
+        # Existing logic uses safe_sum('Trat_Planta')/1000 for KPIs (kTon). 
+        # But 'Cobre Fino' chart above uses 'Cobre_Fino' (Ton) directly.
+        # Let's show "Ton" to be consistent with source, or match the user's mental model.
+        # Usually Plant Throughput is in kTon per period if monthly/quarterly.
+        # Let's check magnitude. ~3000 Ton Cu -> ~300-400kTon Mineral?
+        # Let's check 'kpi_planta' calculation: safe_sum('Trat_Planta')/1000. So Trat_Planta is Ton.
+        
+        # We will plot 'Trat_Planta' (Ton) directly but maybe format axis as M? Or use kTon.
+        # Let's use kTon for cleaner numbers on the chart.
+        
+        df_treat = df.copy()
+        if 'Trat_Planta' in df_treat.columns:
+            df_treat['Trat_kTon'] = df_treat['Trat_Planta'] / 1000.0
+            
+            chart_treat = alt.Chart(df_treat).mark_bar(color='#00b894').encode(
+                x=alt.X('Periodo', 
+                    sort=None, 
+                    type='ordinal',
+                    axis=alt.Axis(
+                        labelAngle=-90, 
+                        labelOverlap=False,
+                        title=None
+                    )
+                ),
+                y=alt.Y('Trat_kTon', axis=alt.Axis(title='Tratamiento (kTon)')),
+                tooltip=['Periodo', 'Trat_kTon', 'Ley_CuT']
+            ).properties(height=300) # Slightly shorter
+            
+            st.altair_chart(chart_treat, use_container_width=True)
 
 
 
