@@ -1010,7 +1010,8 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
 
 
 
-# --- CHARTS (v2.2: ROBUST LABELS) ---
+
+# --- CHARTS (v2.3: CENTERED LABELS) ---
 
         with g1:
             st.caption("🏭 Producción & Ley")
@@ -1025,12 +1026,21 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
                 tooltip=['Periodo', 'Cobre_Fino', 'Ley_CuT']
             )
             
-            # 2. TEXT Layer (Safe syntax: angle=270 is vertical up)
-            text_bars = alt.Chart(df).mark_text(dy=10, color='white', angle=270).encode(
+            # 2. TEXT Layer (CENTERED in Bar)
+            # Use a transform to find the middle of the bar
+            text_bars = alt.Chart(df).transform_calculate(
+                y_mid='datum.Cobre_Fino / 2'
+            ).mark_text(
+                dy=0, 
+                color='white', 
+                angle=270,
+                align='center',   # Horizontally centered relative to text box (which is vertical)
+                baseline='middle' # Vertically centered relative to text box
+            ).encode(
                 x=axis_x,
-                y='Cobre_Fino',
+                y=alt.Y('y_mid:Q'), # Use the calculated mid-point
                 text=alt.Text('Cobre_Fino', format=',.0f')
-            ).properties(title="") # Clean title inheritance
+            ).properties(title="") 
             
             # 3. LINE Layer
             line = alt.Chart(df).mark_line(color='#1f77b4', strokeWidth=3).encode(
@@ -1038,8 +1048,13 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
                 y=alt.Y('Ley_CuT', axis=alt.Axis(title='Ley CuT (%)', titleColor='#1f77b4', orient='right'))
             )
             
-            # 4. TEXT LINE Layer
-            text_line = alt.Chart(df).mark_text(dy=-10, color='#1f77b4', fontSize=10).encode(
+            # 4. TEXT LINE Layer (Lifted Higher)
+            text_line = alt.Chart(df).mark_text(
+                dy=-15, # Higher up to avoid bar collision
+                color='#1f77b4', 
+                fontSize=10,
+                fontWeight='bold'
+            ).encode(
                 x=axis_x,
                 y=alt.Y('Ley_CuT', axis=alt.Axis(orient='right')),
                 text=alt.Text('Ley_CuT', format='.2f')
@@ -1078,7 +1093,7 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
                 chart2 = alt.layer(bars_mov, text_mov).properties(height=400)
                 st.altair_chart(chart2, use_container_width=True)
 
-        # --- TRATAMIENTO (v2.2) ---
+        # --- TRATAMIENTO (v2.3) ---
         st.caption("⚙️ Tratamiento Planta (Periodo a Periodo)")
         
         df_treat = df.copy()
@@ -1094,15 +1109,35 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
                 tooltip=['Periodo', 'Trat_kTon']
             )
             
-            # 2. TEXT (Horizontal, inside top)
-            text_treat = alt.Chart(df_treat).mark_text(dy=15, color='white', fontSize=11).encode(
+            # 2. TEXT (Horizontal, CENTRADO)
+            text_treat = alt.Chart(df_treat).transform_calculate(
+                 y_mid_treat='datum.Trat_kTon / 2'
+            ).mark_text(
+                dy=0, 
+                color='white', 
+                fontSize=11,
+                baseline='middle'
+            ).encode(
                 x=axis_x_treat,
-                y=alt.Y('Trat_kTon'), # Top of bar
+                y='y_mid_treat:Q', # Center in bar
                 text=alt.Text('Trat_kTon', format=',.0f')
             )
             
             chart_treat = alt.layer(bars_treat, text_treat).properties(height=350)
             st.altair_chart(chart_treat, use_container_width=True)
+
+    # --- FINAL: Version update ---
+    # Since we are inside the function, we can't easily change the title from here unless we pass main container.
+    # The clean_slate replacement targetted the whole block including main title at bottom.
+    # We will need to update title separately or include it here if the block allows.
+    # But wait, the previous tool call replaced lines 1009 to 2378? No, it used target content match.
+    # I will stick to replacing the CHART BLOCK and then a separate call for title or include it if range matches.
+    # The previous replace matched a huge block? No, it matched the `Render Dashboard` internal parts.
+    
+    # Let's adjust the replacement content.
+    # I'll just do the chart block replacement as before.
+
+
 
 
 
@@ -2327,7 +2362,7 @@ except Exception as e:
         st.stop()
 
 if data_bundle:
-    st.title("PLAN MINERO 2026 - 2040 🚀")
+    st.title("PLAN MINERO 2026 - 2040 🚀 (v2.3)")
     # st.write("✅ Datos cargados correctamente. Renderizando Dashboard...")
     df = data_bundle.get('planta', pd.DataFrame())
     df_fleet = data_bundle.get('fleet', pd.DataFrame())
