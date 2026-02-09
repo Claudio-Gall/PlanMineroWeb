@@ -1008,74 +1008,11 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
     
 
 
+
         with g1:
             st.caption("🏭 Producción & Ley")
-            
-            # --- DEFINIMOS LOS EJES Y FORMATOS COMUNES ---
-            x_axis = alt.X('Periodo', 
-                sort=None,
-                type='ordinal',
-                axis=alt.Axis(
-                    labelAngle=-90,
-                    labelFontSize=10,
-                    titleFontSize=11,
-                    labelOverlap=False
-                )
-            )
-            
-            # --- CAPA 1: BARRAS (COBRE FINO) ---
-            bars = alt.Chart(df).mark_bar(color='#ff7f0e').encode(
-                x=x_axis,
-                y=alt.Y('Cobre_Fino', axis=alt.Axis(title='Cobre Fino (Ton)', titleColor='#ff7f0e')),
-                tooltip=['Periodo', 'Cobre_Fino', 'Ley_CuT']
-            )
-            
-            # --- CAPA 2: ETIQUETAS (COBRE FINO) ---
-            # Separated Chart to avoid inheritance issues
-            text_bars = alt.Chart(df).mark_text(
-                align='center',
-                baseline='middle',
-                dy=-10, # Shift up slightly
-                color='white',
-                angle=-90 # Vertically
-            ).encode(
-                x=x_axis,
-                y=alt.Y('Cobre_Fino'),
-                text=alt.Text('Cobre_Fino', format=',.0f')
-            )
-            
-            # --- CAPA 3: LÍNEA (LEY CUT) ---
-            line = alt.Chart(df).mark_line(color='#1f77b4', strokeWidth=3).encode(
-                x=x_axis,
-                y=alt.Y('Ley_CuT', axis=alt.Axis(title='Ley CuT (%)', titleColor='#1f77b4', orient='right')),
-                tooltip=['Periodo', 'Ley_CuT']
-            )
-            
-            # --- CAPA 4: ETIQUETAS (LEY CUT) ---
-            text_line = alt.Chart(df).mark_text(
-                align='left', 
-                baseline='middle',
-                dx=5,
-                color='#1f77b4',
-                fontSize=10
-            ).encode(
-                x=x_axis,
-                y=alt.Y('Ley_CuT', axis=alt.Axis(orient='right')),
-                text=alt.Text('Ley_CuT', format='.2f')
-            )
-
-            chart1 = alt.layer(bars, text_bars, line, text_line).resolve_scale(y='independent').properties(height=400)
-            st.altair_chart(chart1, use_container_width=True)
-
-        with g2:
-            st.caption("🏔️ Movimiento Mina (Fases)")
-            melt_cols = ['Mov_F03', 'Mov_F04', 'Mov_F05', 'Remanejo']
-            valid_melt = [c for c in melt_cols if c in df.columns]
-            if valid_melt:
-                df_melt = df.melt(id_vars=['Periodo'], value_vars=valid_melt, var_name='Fase', value_name='Kton')
-                
-                # Common X Axis
-                x_axis_mov = alt.X('Periodo', 
+            base = alt.Chart(df).encode(
+                x=alt.X('Periodo', 
                     sort=None,
                     type='ordinal',
                     axis=alt.Axis(
@@ -1085,71 +1022,61 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
                         labelOverlap=False
                     )
                 )
+            )
+            bars = base.mark_bar(color='#ff7f0e').encode(
+                y=alt.Y('Cobre_Fino', axis=alt.Axis(title='Cobre Fino (Ton)', titleColor='#ff7f0e')),
+                tooltip=['Periodo', 'Cobre_Fino', 'Ley_CuT']
+            )
+            line = base.mark_line(color='#1f77b4', strokeWidth=3).encode(
+                y=alt.Y('Ley_CuT', axis=alt.Axis(title='Ley CuT (%)', titleColor='#1f77b4', orient='right')),
+            )
+            chart1 = alt.layer(bars, line).resolve_scale(y='independent').properties(height=350)
+            st.altair_chart(chart1, use_container_width=True)
 
-                # --- CAPA 1: BARRAS APILADAS ---
-                bars_mov = alt.Chart(df_melt).mark_bar().encode(
-                    x=x_axis_mov,
+        with g2:
+            st.caption("🏔️ Movimiento Mina (Fases)")
+            melt_cols = ['Mov_F03', 'Mov_F04', 'Mov_F05', 'Remanejo']
+            valid_melt = [c for c in melt_cols if c in df.columns]
+            if valid_melt:
+                df_melt = df.melt(id_vars=['Periodo'], value_vars=valid_melt, var_name='Fase', value_name='Kton')
+                chart2 = alt.Chart(df_melt).mark_bar().encode(
+                    x=alt.X('Periodo', 
+                        sort=None,
+                        type='ordinal', # Force discrete treatment
+                        axis=alt.Axis(
+                            labelAngle=-90, # Vertical labels
+                            labelFontSize=10,
+                            titleFontSize=11,
+                            labelOverlap=False # Force showing all labels
+                        )
+                    ),
                     y=alt.Y('Kton', stack='zero'),
                     color=alt.Color('Fase', scale=alt.Scale(scheme='category10')),
                     tooltip=['Periodo', 'Fase', 'Kton']
-                )
-                
-                # --- CAPA 2: ETIQUETAS INTERNAS ---
-                text_mov = alt.Chart(df_melt).mark_text(
-                    dy=0,
-                    color='white',
-                    fontSize=9
-                ).encode(
-                    x=x_axis_mov,
-                    y=alt.Y('Kton', stack='zero'),
-                    text=alt.Text('Kton', format=',.0f'),
-                    detail='Fase',
-                    order=alt.Order('Fase', sort='descending'),
-                    opacity=alt.condition(alt.datum.Kton > 50, alt.value(1), alt.value(0))
-                )
-
-                chart2 = alt.layer(bars_mov, text_mov).properties(height=400)
+                ).properties(height=350)
                 st.altair_chart(chart2, use_container_width=True)
 
-        # --- NUEVO GRÁFICO: TRATAMIENTO (Solicitud Usuario) ---
+        # --- NUEVO GRÁFICO: TRATAMIENTO (Versión Simplificada) ---
         st.caption("⚙️ Tratamiento Planta (Periodo a Periodo)")
         
         df_treat = df.copy()
         if 'Trat_Planta' in df_treat.columns:
             df_treat['Trat_kTon'] = df_treat['Trat_Planta'] / 1000.0
             
-            # Common X Axis
-            x_axis_treat = alt.X('Periodo', 
-                sort=None, 
-                type='ordinal',
-                axis=alt.Axis(
-                    labelAngle=-90, 
-                    labelOverlap=False,
-                    title=None
-                )
-            )
-            
-            # --- CAPA 1: BARRAS ---
-            bars_treat = alt.Chart(df_treat).mark_bar(color='#00b894').encode(
-                x=x_axis_treat,
+            chart_treat = alt.Chart(df_treat).mark_bar(color='#00b894').encode(
+                x=alt.X('Periodo', 
+                    sort=None, 
+                    type='ordinal',
+                    axis=alt.Axis(
+                        labelAngle=-90, 
+                        labelOverlap=False,
+                        title=None
+                    )
+                ),
                 y=alt.Y('Trat_kTon', axis=alt.Axis(title='Tratamiento (kTon)')),
-                tooltip=['Periodo', 'Trat_kTon']
-            )
+                tooltip=['Periodo', 'Trat_kTon', 'Ley_CuT']
+            ).properties(height=300)
             
-            # --- CAPA 2: ETIQUETAS ---
-            text_treat = alt.Chart(df_treat).mark_text(
-                align='center', 
-                baseline='bottom',
-                dy=-5,
-                color='white',
-                fontSize=11
-            ).encode(
-                x=x_axis_treat,
-                y='Trat_kTon',
-                text=alt.Text('Trat_kTon', format=',.0f')
-            )
-            
-            chart_treat = alt.layer(bars_treat, text_treat).properties(height=350)
             st.altair_chart(chart_treat, use_container_width=True)
 
 
