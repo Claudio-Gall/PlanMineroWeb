@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan Minero Estratégico | Anglo American</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Preload fonts to avoid FOUT -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+
+<body>
+    <!-- Background Texture -->
+    <div class="bg-image" style="background-image: url('fondo_mina2.png');"></div>
+
+    <div class="main-container">
+        <!-- HEADER -->
+        <header>
+            <div class="logo-section">
+                <!-- Applied filter to make logo white/visible on dark bg -->
+                <img src="../logo.png" alt="Anglo American Logo" class="logo-img"
+                    style="filter: brightness(0) invert(1) drop-shadow(0 0 2px rgba(255,255,255,0.5));"
+                    onerror="this.style.display='none'">
+                <div class="title-group">
+                    <h1>Plan Minero Estratégico</h1>
+                    <h2>Ciclo 2026 - 2030</h2>
+                </div>
+            </div>
+
+        </header>
+
+        <!-- MAIN DASHBOARD -->
+        <div class="dashboard-grid">
+
+            <!-- LEFT CONTENT (DATA) -->
+            <div class="content-area">
+
+                <!-- KPI SECTION TITLE -->
+                <div class="kpi-header">
+                    <span class="kpi-title">Key Performance Indicators</span>
+                    <span class="kpi-title" style="color:var(--accent-cyan)">LIVE DATA :: 420ms LATENCY</span>
+                </div>
+
+                <!-- KPI GRID (Using data examples from app.py) -->
+                <div class="kpi-grid">
+                    <!-- Row 1 -->
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Cobre Fino</span><span
+                                class="kpi-icon">⛏️</span></div>
+                        <div class="kpi-value">420<span class="kpi-unit">KTON</span></div>
+                        <div class="kpi-trend trend-up">↗ +5.2% VS BUD</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Mov. F03</span><span class="kpi-icon">📚</span>
+                        </div>
+                        <div class="kpi-value">420<span class="kpi-unit">KTON</span></div>
+                        <div class="kpi-trend trend-down">↘ -2.1% VAR</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Mov. F05</span><span class="kpi-icon">📚</span>
+                        </div>
+                        <div class="kpi-value">420<span class="kpi-unit">KTON</span></div>
+                        <div class="kpi-trend trend-stable">— STABLE</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Remanejo</span><span class="kpi-icon">🧊</span>
+                        </div>
+                        <div class="kpi-value">420<span class="kpi-unit">KTON</span></div>
+                        <div class="kpi-trend trend-up">↗ OPTIMIZED</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Mov. Total</span><span
+                                class="kpi-icon">📈</span></div>
+                        <div class="kpi-value">150<span class="kpi-unit">MT</span></div>
+                        <div class="kpi-trend trend-up">↗ TARGET MET</div>
+                    </div>
+
+                    <!-- Row 2 -->
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Trat. Planta</span><span
+                                class="kpi-icon">⚡</span></div>
+                        <div class="kpi-value">420<span class="kpi-unit">KTON</span></div>
+                        <div class="kpi-trend trend-down">↘ UNDERFLOW</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Ley CuT</span><span class="kpi-icon">⚖️</span>
+                        </div>
+                        <div class="kpi-value">0.85<span class="kpi-unit">%</span></div>
+                        <div class="kpi-trend trend-stable">— AVG</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Recuperación</span><span
+                                class="kpi-icon">⚗️</span></div>
+                        <div class="kpi-value">82.5<span class="kpi-unit">%</span></div>
+                        <div class="kpi-trend trend-up">↗ HIGH EFF.</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Costo Mina</span><span
+                                class="kpi-icon">💲</span></div>
+                        <div class="kpi-value">3.0<span class="kpi-unit">$/T</span></div>
+                        <div class="kpi-trend trend-down">↘ OVER BUDGET</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Costo Planta</span><span
+                                class="kpi-icon">💲</span></div>
+                        <div class="kpi-value">15.0<span class="kpi-unit">$/T</span></div>
+                        <div class="kpi-trend trend-up">↗ SAVINGS</div>
+                    </div>
+                </div>
+
+                <!-- CHARTS AREA -->
+                <div class="charts-grid">
+                    <div class="chart-panel">
+                        <div class="panel-header">
+                            <span class="panel-title">Proyección de Producción</span>
+                            <span style="font-size: 0.8rem; color: var(--text-muted);">View Full Report ↗</span>
+                        </div>
+                        <div class="chart-placeholder">
+                            [ VISUALIZATION MODULE #01: PRODUCTION CURVE ]
+                        </div>
+                    </div>
+                    <div class="chart-panel">
+                        <div class="panel-header">
+                            <span class="panel-title">Análisis de Costos Unitarios</span>
+                            <span style="font-size: 0.8rem; color: var(--text-muted);">Export CSV ⬇</span>
+                        </div>
+                        <div class="chart-placeholder">
+                            [ VISUALIZATION MODULE #02: COST BREAKDOWN ]
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT SIDEBAR (AI CHAT) -->
+            <div class="chat-container">
+                <div class="chat-header">
+                    <span class="chat-title">
+                        <span style="color:white;">Copilot</span> // AI
+                    </span>
+                </div>
+
+                <div class="chat-messages">
+                    <div class="msg msg-ai">
+                        <strong>Sistema:</strong> Bienvenido. El Plan Estratégico 2026-2030 está cargado. ¿Qué escenario
+                        desea simular hoy?
+                    </div>
+                    <div class="msg msg-user">
+                        Muéstrame el impacto de reducir la ley de corte en la Fase 9.
+                    </div>
+                    <div class="msg msg-ai">
+                        Procesando simulación...
+                        <br><br>
+                        Calculando impacto en VPN y vida útil...
+                    </div>
+                </div>
+
+                <div class="chat-input-area">
+                    <div class="input-group">
+                        <input type="text" class="chat-input" placeholder="Escriba comando o pregunta...">
+                        <button class="send-btn">Enviar</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+
+</html>
