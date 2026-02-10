@@ -67,7 +67,7 @@ def load_css():
             [data-testid="stAppViewContainer"] {background-color: #050910;}
             
             /* SAFE RESTORATION - HIDE ONLY HEADER */
-            [data-testid="stHeader"] {background: transparent;}
+            [data-testid="stHeader"] {display: none !important;}
             
             .block-container {
                 padding-top: 1rem; 
@@ -76,7 +76,8 @@ def load_css():
                 padding-right: 1rem;
                 max-width: 100% !important;
             }
-            footer {visibility: hidden;}
+            [data-testid="stToolbar"] {display: none !important;}
+            footer {display: none !important; visibility: hidden !important;}
             </style>
             """
             st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
