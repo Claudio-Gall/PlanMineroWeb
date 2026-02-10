@@ -1013,7 +1013,10 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
 
 
 
-# --- CHARTS (v2.5: RESTORED AXES & TITLE) ---
+
+
+
+# --- CHARTS (v2.8: FORCE AXIS TITLE INHERITANCE) ---
 
         with g1:
             st.caption("🏭 Producción & Ley")
@@ -1023,51 +1026,46 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
             
             # --- GROUP 1: LEFT AXIS (Bars + Centered Text) ---
             # 1. BARS
-            # Explicitly define axis properties to ensure visibility
-            bars = alt.Chart(df).mark_bar(color='#ff7f0e').encode(
-                x=axis_x,
-                y=alt.Y('Cobre_Fino', axis=alt.Axis(title='Cobre Fino (Ton)', titleColor='#ff7f0e', titleFontSize=12)),
+            chart_base_left = alt.Chart(df).encode(
+                 x=axis_x
+            )
+
+            bars = chart_base_left.mark_bar(color='#ff7f0e').encode(
+                y=alt.Y('Cobre_Fino', axis=alt.Axis(title='Cobre Fino (Ton)', titleColor='#ff7f0e', titleFontSize=12, titleFontWeight='bold')),
                 tooltip=['Periodo', 'Cobre_Fino', 'Ley_CuT']
             )
             
             # 2. TEXT (CENTERED)
-            text_bars = alt.Chart(df).transform_calculate(
+            # The trick: use the SAME Y-axis definition or rely on layer merging.
+            # If we use a different field ('y_mid'), Altair might create a dual axis if titles conflict.
+            # Let's try explicitly setting the SAME title to force merge.
+            text_bars = chart_base_left.transform_calculate(
                 y_mid='datum.Cobre_Fino / 2'
             ).mark_text(
-                dy=0,  
-                color='white', 
-                angle=270,        
-                align='center', 
-                baseline='middle' 
+                dy=0, color='white', angle=270, align='center', baseline='middle' 
             ).encode(
-                x=axis_x,
-                y=alt.Y('y_mid:Q', axis=None), # Keep this axis hidden to avoid duplication
+                y=alt.Y('y_mid:Q', axis=alt.Axis(title='Cobre Fino (Ton)', titleColor='#ff7f0e', titleFontSize=12, titleFontWeight='bold')), 
                 text=alt.Text('Cobre_Fino', format=',.0f')
             ).properties(title="")
 
-            # Layer Group 1
-            layer_left = alt.layer(bars, text_bars)
+            layer_left = alt.layer(bars, text_bars) # Should merge into one axis
 
             # --- GROUP 2: RIGHT AXIS (Line + Top Text) ---
+            chart_base_right = alt.Chart(df).encode(x=axis_x)
+
             # 3. LINE
-            line = alt.Chart(df).mark_line(color='#1f77b4', strokeWidth=3).encode(
-                x=axis_x,
+            line = chart_base_right.mark_line(color='#1f77b4', strokeWidth=3).encode(
                 y=alt.Y('Ley_CuT', axis=alt.Axis(title='Ley CuT (%)', titleColor='#1f77b4', orient='right'))
             )
             
             # 4. TEXT (TOP)
-            text_line = alt.Chart(df).mark_text(
-                dy=-15, 
-                color='#1f77b4', 
-                fontSize=10, 
-                fontWeight='bold'
+            text_line = chart_base_right.mark_text(
+                dy=-15, color='#1f77b4', fontSize=10, fontWeight='bold'
             ).encode(
-                x=axis_x,
-                y=alt.Y('Ley_CuT', axis=alt.Axis(orient='right')),
+                y=alt.Y('Ley_CuT', axis=alt.Axis(orient='right', title='Ley CuT (%)', titleColor='#1f77b4')), # Match title
                 text=alt.Text('Ley_CuT', format='.2f')
             )
 
-            # Layer Group 2
             layer_right = alt.layer(line, text_line)
 
             # --- COMPOSE ---
@@ -1086,7 +1084,7 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
 
                 bars_mov = alt.Chart(df_melt).mark_bar().encode(
                     x=axis_x_mov,
-                    y=alt.Y('Kton', axis=alt.Axis(title='Movimiento (kTon)')), # Ensure Title
+                    y=alt.Y('Kton', axis=alt.Axis(title='Movimiento (kTon)')), 
                     color=alt.Color('Fase', scale=alt.Scale(scheme='category10')),
                     tooltip=['Periodo', 'Fase', 'Kton']
                 )
@@ -1103,7 +1101,7 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
                 chart2 = alt.layer(bars_mov, text_mov).properties(height=400)
                 st.altair_chart(chart2, use_container_width=True)
 
-        # --- TRATAMIENTO (v2.5) ---
+        # --- TRATAMIENTO (v2.8) ---
         st.caption("⚙️ Tratamiento Planta (Periodo a Periodo)")
         
         df_treat = df.copy()
@@ -1112,7 +1110,6 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
             
             axis_x_treat = alt.X('Periodo', sort=None, type='ordinal', axis=alt.Axis(labelAngle=-90, labelOverlap=False, title=None))
             
-            # Bars with Explicit Axis Title
             bars_treat = alt.Chart(df_treat).mark_bar(color='#00b894').encode(
                 x=axis_x_treat,
                 y=alt.Y('Trat_kTon', axis=alt.Axis(title='Tratamiento (kTon)', titleFontWeight='bold')),
@@ -1122,20 +1119,18 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
             text_treat = alt.Chart(df_treat).transform_calculate(
                  y_mid_treat='datum.Trat_kTon / 2'
             ).mark_text(
-                dy=0, 
-                color='white', 
-                fontSize=11,
-                baseline='middle'
+                dy=0, color='white', fontSize=11, baseline='middle'
             ).encode(
                 x=axis_x_treat,
-                y=alt.Y('y_mid_treat:Q', axis=None), # Hide axis for labels
+                # Explicitly MATCH title to force display
+                y=alt.Y('y_mid_treat:Q', axis=alt.Axis(title='Tratamiento (kTon)', titleFontWeight='bold')), 
                 text=alt.Text('Trat_kTon', format=',.0f')
             )
             
             chart_treat = alt.layer(bars_treat, text_treat).properties(height=350)
             st.altair_chart(chart_treat, use_container_width=True)
 
-    # --- FINAL: Title Update Target Below ---
+    # --- FINAL: No visible version tag ---
 
 
 
