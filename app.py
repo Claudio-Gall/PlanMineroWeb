@@ -66,39 +66,50 @@ def load_css():
             <style>
             [data-testid="stAppViewContainer"] {background-color: #050910;}
             
-            /* SAFE RESTORATION - HIDE ONLY HEADER */
+            /* Attempts to hide all known headers/footers via CSS */
+            header {display: none !important;}
+            footer {display: none !important;}
             [data-testid="stHeader"] {display: none !important;}
-            
-            /* Hide Streamlit Status and Decoration */
-            [data-testid="stDecoration"] {display: none !important;}
-            [data-testid="stStatusWidget"] {display: none !important;}
-
-            /* HIDE FOOTER & MENU */
-            footer {display: none !important; visibility: hidden !important;}
-            #MainMenu {visibility: hidden; display: none !important;}
-            .stDeployButton {display:none !important;}
-            
-            /* NUCLEAR OPTION FOR FULLSCREEN AND TOOLBAR */
             [data-testid="stToolbar"] {display: none !important;}
             .stApp > header {display: none !important;}
-            
-            /* Target ANY element with 'fullscreen' in title or aria-label */
-            button[title*="fullscreen"] {display: none !important;}
-            button[title*="Fullscreen"] {display: none !important;} 
-            button[aria-label*="fullscreen"] {display: none !important;}
-            
-            /* Specific known class for fullscreen button wrapper in some versions */
-            [data-testid="StyledFullScreenButton"] {display: none !important;}
-
-            .block-container {
-                padding-top: 1rem; 
-                padding-bottom: 0rem;
-                padding-left: 1rem; 
-                padding-right: 1rem;
-                max-width: 100% !important;
-            }
             </style>
             """
+            st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
+            st.markdown(st_fixes, unsafe_allow_html=True)
+            
+            # 3. JS INJECTION (NUCLEAR OPTION V3.0)
+            # This script will run on client-side to find and remove the elements
+            js_script = """
+            <script>
+            function removeElements() {
+                // Hide Header
+                const headers = window.parent.document.querySelectorAll('header');
+                headers.forEach(h => h.style.display = 'none');
+                
+                // Hide Footer
+                const footers = window.parent.document.querySelectorAll('footer');
+                footers.forEach(f => f.style.display = 'none');
+                
+                // Hide Toolbar
+                const toolbars = window.parent.document.querySelectorAll('[data-testid="stToolbar"]');
+                toolbars.forEach(t => t.style.display = 'none');
+                
+                // Hide specific 'viewer' buttons (fullscreen, etc)
+                const buttons = window.parent.document.querySelectorAll('button');
+                buttons.forEach(btn => {
+                    if (btn.innerText.includes('Fullscreen') || btn.title.includes('Fullscreen')) {
+                        btn.style.display = 'none';
+                    }
+                });
+            }
+            // Run repeatedly to catch dynamic renders
+            setInterval(removeElements, 500);
+            </script>
+            """
+            import streamlit.components.v1 as components
+            components.html(js_script, height=0)
+
+    except FileNotFoundError:
             st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
             st.markdown(st_fixes, unsafe_allow_html=True)
 
@@ -2375,7 +2386,7 @@ except Exception as e:
         st.stop()
 
 if data_bundle:
-    st.title("PLAN MINERO 2026 - 2029 🚀 (v2.9)")
+    st.title("PLAN MINERO 2026 - 2029 🚀 (v3.0 Secured)")
     # st.write("✅ Datos cargados correctamente. Renderizando Dashboard...")
     df = data_bundle.get('planta', pd.DataFrame())
     df_fleet = data_bundle.get('fleet', pd.DataFrame())
