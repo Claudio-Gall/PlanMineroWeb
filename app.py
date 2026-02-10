@@ -78,9 +78,17 @@ def load_css():
             #MainMenu {visibility: hidden; display: none !important;}
             .stDeployButton {display:none !important;}
             
-            /* Attempt to hide fullscreen button if present */
-            button[title="View fullscreen"] {display: none !important;}
+            /* NUCLEAR OPTION FOR FULLSCREEN AND TOOLBAR */
             [data-testid="stToolbar"] {display: none !important;}
+            .stApp > header {display: none !important;}
+            
+            /* Target ANY element with 'fullscreen' in title or aria-label */
+            button[title*="fullscreen"] {display: none !important;}
+            button[title*="Fullscreen"] {display: none !important;} 
+            button[aria-label*="fullscreen"] {display: none !important;}
+            
+            /* Specific known class for fullscreen button wrapper in some versions */
+            [data-testid="StyledFullScreenButton"] {display: none !important;}
 
             .block-container {
                 padding-top: 1rem; 
@@ -2367,7 +2375,7 @@ except Exception as e:
         st.stop()
 
 if data_bundle:
-    st.title("PLAN MINERO 2026 - 2029 🚀 (Secured)")
+    st.title("PLAN MINERO 2026 - 2029 🚀 (v2.9)")
     # st.write("✅ Datos cargados correctamente. Renderizando Dashboard...")
     df = data_bundle.get('planta', pd.DataFrame())
     df_fleet = data_bundle.get('fleet', pd.DataFrame())
