@@ -69,6 +69,19 @@ def load_css():
             /* SAFE RESTORATION - HIDE ONLY HEADER */
             [data-testid="stHeader"] {display: none !important;}
             
+            /* Hide Streamlit Status and Decoration */
+            [data-testid="stDecoration"] {display: none !important;}
+            [data-testid="stStatusWidget"] {display: none !important;}
+
+            /* HIDE FOOTER & MENU */
+            footer {display: none !important; visibility: hidden !important;}
+            #MainMenu {visibility: hidden; display: none !important;}
+            .stDeployButton {display:none !important;}
+            
+            /* Attempt to hide fullscreen button if present */
+            button[title="View fullscreen"] {display: none !important;}
+            [data-testid="stToolbar"] {display: none !important;}
+
             .block-container {
                 padding-top: 1rem; 
                 padding-bottom: 0rem;
@@ -76,8 +89,6 @@ def load_css():
                 padding-right: 1rem;
                 max-width: 100% !important;
             }
-            [data-testid="stToolbar"] {display: none !important;}
-            footer {display: none !important; visibility: hidden !important;}
             </style>
             """
             st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
@@ -2356,7 +2367,7 @@ except Exception as e:
         st.stop()
 
 if data_bundle:
-    st.title("PLAN MINERO 2026 - 2029 🚀")
+    st.title("PLAN MINERO 2026 - 2029 🚀 (Secured)")
     # st.write("✅ Datos cargados correctamente. Renderizando Dashboard...")
     df = data_bundle.get('planta', pd.DataFrame())
     df_fleet = data_bundle.get('fleet', pd.DataFrame())
