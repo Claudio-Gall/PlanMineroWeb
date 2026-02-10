@@ -1011,7 +1011,8 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
 
 
 
-# --- CHARTS (v2.3: CENTERED LABELS) ---
+
+# --- CHARTS (v2.4: FIXED AXIS DUPLICATION) ---
 
         with g1:
             st.caption("🏭 Producción & Ley")
@@ -1019,40 +1020,45 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
             # --- Common Axis Def ---
             axis_x = alt.X('Periodo', sort=None, type='ordinal', axis=alt.Axis(labelAngle=-90, labelFontSize=10, labelOverlap=False))
             
-            # 1. BARS Layer
+            # --- GROUP 1: LEFT AXIS (Bars + Centered Text) ---
+            # 1. BARS
             bars = alt.Chart(df).mark_bar(color='#ff7f0e').encode(
                 x=axis_x,
                 y=alt.Y('Cobre_Fino', axis=alt.Axis(title='Cobre Fino (Ton)', titleColor='#ff7f0e')),
                 tooltip=['Periodo', 'Cobre_Fino', 'Ley_CuT']
             )
             
-            # 2. TEXT Layer (CENTERED in Bar)
-            # Use a transform to find the middle of the bar
+            # 2. TEXT (CENTERED)
+            # transform_calculate y_mid creates a value in the SAME domain (0-3000)
             text_bars = alt.Chart(df).transform_calculate(
                 y_mid='datum.Cobre_Fino / 2'
             ).mark_text(
-                dy=0, 
+                dy=0,  
                 color='white', 
-                angle=270,
-                align='center',   # Horizontally centered relative to text box (which is vertical)
-                baseline='middle' # Vertically centered relative to text box
+                angle=270,        # Vertical text
+                align='center', 
+                baseline='middle' 
             ).encode(
                 x=axis_x,
-                y=alt.Y('y_mid:Q'), # Use the calculated mid-point
+                y=alt.Y('y_mid:Q', axis=None), # Explicitly hide axis, share scale via layering
                 text=alt.Text('Cobre_Fino', format=',.0f')
-            ).properties(title="") 
-            
-            # 3. LINE Layer
+            ).properties(title="")
+
+            # Layer Group 1
+            layer_left = alt.layer(bars, text_bars)
+
+            # --- GROUP 2: RIGHT AXIS (Line + Top Text) ---
+            # 3. LINE
             line = alt.Chart(df).mark_line(color='#1f77b4', strokeWidth=3).encode(
                 x=axis_x,
                 y=alt.Y('Ley_CuT', axis=alt.Axis(title='Ley CuT (%)', titleColor='#1f77b4', orient='right'))
             )
             
-            # 4. TEXT LINE Layer (Lifted Higher)
+            # 4. TEXT (TOP)
             text_line = alt.Chart(df).mark_text(
-                dy=-15, # Higher up to avoid bar collision
+                dy=-15, 
                 color='#1f77b4', 
-                fontSize=10,
+                fontSize=10, 
                 fontWeight='bold'
             ).encode(
                 x=axis_x,
@@ -1060,11 +1066,16 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
                 text=alt.Text('Ley_CuT', format='.2f')
             )
 
-            chart1 = alt.layer(bars, text_bars, line, text_line).resolve_scale(y='independent').properties(height=400)
+            # Layer Group 2
+            layer_right = alt.layer(line, text_line)
+
+            # --- COMPOSE: Resolve Scale only between the two groups ---
+            chart1 = alt.layer(layer_left, layer_right).resolve_scale(y='independent').properties(height=400)
             st.altair_chart(chart1, use_container_width=True)
 
         with g2:
             st.caption("🏔️ Movimiento Mina (Fases)")
+            # ... (Unchanged logic for Chart 2) ...
             melt_cols = ['Mov_F03', 'Mov_F04', 'Mov_F05', 'Remanejo']
             valid_melt = [c for c in melt_cols if c in df.columns]
             if valid_melt:
@@ -1072,7 +1083,6 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
                 
                 axis_x_mov = alt.X('Periodo', sort=None, type='ordinal', axis=alt.Axis(labelAngle=-90, labelFontSize=10, labelOverlap=False))
 
-                # 1. BARS Layer
                 bars_mov = alt.Chart(df_melt).mark_bar().encode(
                     x=axis_x_mov,
                     y=alt.Y('Kton', stack='zero'),
@@ -1080,20 +1090,19 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
                     tooltip=['Periodo', 'Fase', 'Kton']
                 )
                 
-                # 2. TEXT Layer (Only show big segments)
                 text_mov = alt.Chart(df_melt).mark_text(dy=0, color='white', fontSize=10).encode(
                     x=axis_x_mov,
                     y=alt.Y('Kton', stack='zero'),
                     text=alt.Text('Kton', format=',.0f'),
                     detail='Fase',
                     order=alt.Order('Fase', sort='descending'),
-                    opacity=alt.condition(alt.datum.Kton > 100, alt.value(1), alt.value(0)) # Hide small labels < 100
+                    opacity=alt.condition(alt.datum.Kton > 100, alt.value(1), alt.value(0)) 
                 )
 
                 chart2 = alt.layer(bars_mov, text_mov).properties(height=400)
                 st.altair_chart(chart2, use_container_width=True)
 
-        # --- TRATAMIENTO (v2.3) ---
+        # --- TRATAMIENTO (v2.4) ---
         st.caption("⚙️ Tratamiento Planta (Periodo a Periodo)")
         
         df_treat = df.copy()
@@ -1102,14 +1111,13 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
             
             axis_x_treat = alt.X('Periodo', sort=None, type='ordinal', axis=alt.Axis(labelAngle=-90, labelOverlap=False, title=None))
             
-            # 1. BARS
+            # Simple Layering (Single Axis, no resolve needed)
             bars_treat = alt.Chart(df_treat).mark_bar(color='#00b894').encode(
                 x=axis_x_treat,
                 y=alt.Y('Trat_kTon', axis=alt.Axis(title='Tratamiento (kTon)')),
                 tooltip=['Periodo', 'Trat_kTon']
             )
             
-            # 2. TEXT (Horizontal, CENTRADO)
             text_treat = alt.Chart(df_treat).transform_calculate(
                  y_mid_treat='datum.Trat_kTon / 2'
             ).mark_text(
@@ -1119,25 +1127,14 @@ def render_dashboard(df, df_pala_fase_view, df_fleet=None, key_id="main"):
                 baseline='middle'
             ).encode(
                 x=axis_x_treat,
-                y='y_mid_treat:Q', # Center in bar
+                y=alt.Y('y_mid_treat:Q', axis=None), # Hide axis
                 text=alt.Text('Trat_kTon', format=',.0f')
             )
             
             chart_treat = alt.layer(bars_treat, text_treat).properties(height=350)
             st.altair_chart(chart_treat, use_container_width=True)
 
-    # --- FINAL: Version update ---
-    # Since we are inside the function, we can't easily change the title from here unless we pass main container.
-    # The clean_slate replacement targetted the whole block including main title at bottom.
-    # We will need to update title separately or include it here if the block allows.
-    # But wait, the previous tool call replaced lines 1009 to 2378? No, it used target content match.
-    # I will stick to replacing the CHART BLOCK and then a separate call for title or include it if range matches.
-    # The previous replace matched a huge block? No, it matched the `Render Dashboard` internal parts.
-    
-    # Let's adjust the replacement content.
-    # I'll just do the chart block replacement as before.
-
-
+    # --- FINAL: Version update replacement target below ---
 
 
 
@@ -2362,7 +2359,7 @@ except Exception as e:
         st.stop()
 
 if data_bundle:
-    st.title("PLAN MINERO 2026 - 2040 🚀 (v2.3)")
+    st.title("PLAN MINERO 2026 - 2040 🚀 (v2.4)")
     # st.write("✅ Datos cargados correctamente. Renderizando Dashboard...")
     df = data_bundle.get('planta', pd.DataFrame())
     df_fleet = data_bundle.get('fleet', pd.DataFrame())
