@@ -2344,17 +2344,16 @@ def load_data_v5():
         df_perfos = df_aux[df_aux['Category']=='Perfos'] if not df_aux.empty else pd.DataFrame()
         df_serv = df_aux[df_aux['Category']=='Servicios'] if not df_aux.empty else pd.DataFrame()
         
-        # NEW: Load AI Context (Raw Smart Sheets)
-        import ai_loader
-        # importlib.reload(ai_loader) # Force reload
-        ai_raw = ai_loader.get_ai_context(file_path)
+        
+        # NOTE: AI Context loading moved to Lazy Loader (load_ai_context_lazy)
+        # This prevents startup timeout by NOT loading 10 sheets here.
 
         return {
             'planta': df_planta,
             'fleet': df_fleet,
             'perfos': df_perfos, 
             'servicios': df_serv,
-            'ai_raw': ai_raw # Complete raw data for AI
+            # 'ai_raw': ai_raw # REMOVED: Loaded lazily in Chat component
         }
     except Exception as e:
         print(f"Error loading V5: {e}")
@@ -2363,7 +2362,16 @@ def load_data_v5():
         st.code(traceback.format_exc())
         return None
 
-# --- MAIN APP FLOW ---
+# --- LAZY LOADER FOR AI CONTEXT (OPTIMIZATION V4.0) ---
+@st.cache_data(show_spinner=False)
+def load_ai_context_lazy(file_path):
+    """
+    Loads the heavy AI context (10+ sheets) ONLY on demand.
+    Cached to avoid reloading during the session.
+    """
+    import ai_loader
+    return ai_loader.get_ai_context(file_path)
+
 # --- MAIN APP FLOW ---
 FILE_PATH = "plan_budget_real.xlsx" # Define FILE_PATH here
 
@@ -2392,7 +2400,7 @@ if data_bundle:
     df_fleet = data_bundle.get('fleet', pd.DataFrame())
     df_perfos = data_bundle.get('perfos', pd.DataFrame())
     df_serv = data_bundle.get('servicios', pd.DataFrame())
-    ai_raw_context = data_bundle.get('ai_raw', {}) # Raw Dict
+    # ai_raw_context loaded lazily in Chat component
     
     
     # Deprecated legacy DF
@@ -2551,7 +2559,10 @@ if data_bundle:
             # Initialize Agent
             if 'chat_agent_inst' not in st.session_state:
                 try:
-                    # NEW MULTI-CONTEXT INIT V2 (RAW AI)
+                    # NEW LAZY LOADING V4.0
+                    with st.spinner("⏳ Iniciando Cerebro IA (Carga única de contextos)..."):
+                        ai_raw_context = load_ai_context_lazy(FILE_PATH)
+                    
                     data_context = {
                         'planta': df,
                         'fleet': df_fleet, 
