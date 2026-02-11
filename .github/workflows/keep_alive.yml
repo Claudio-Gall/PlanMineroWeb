@@ -11,9 +11,9 @@ jobs:
     steps:
       - name: Ping App
         run: |
-          # Ping the Netlify entry point
-          curl -I https://minera-budget-2026.netlify.app/
+          # Ping the DIRECT Streamlit URL to force wake-up
+          # (Netlify is just a wrapper, pinging it doesn't wake the backend)
+          curl -I https://budget2026.streamlit.app/
           
-          # If you know the direct Streamlit Cloud URL (e.g. https://your-app.streamlit.app), 
-          # uncomment and add it below for a more direct "wake up":
-          # curl -I https://tu-app.streamlit.app/
+          # Optional: Ping Netlify too just in case
+          curl -I https://budgetsoldado2026.netlify.app/
