@@ -11,9 +11,9 @@ jobs:
     steps:
       - name: Ping App
         run: |
-          # Ping the DIRECT Streamlit URL to force wake-up
-          # (Netlify is just a wrapper, pinging it doesn't wake the backend)
-          curl -I https://budget2026.streamlit.app/
+          # SIMULATE REAL BROWSER VISIT (Full GET request, User-Agent)
+          # HEAD requests (-I) are sometimes ignored by sleep-management systems.
+          curl -L --retry 3 --max-time 10 -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" https://budget2026.streamlit.app/
           
-          # Optional: Ping Netlify too just in case
-          curl -I https://budgetsoldado2026.netlify.app/
+          # Optional: Ping Netlify too (just to keep route active)
+          curl -L --retry 3 --max-time 10 -A "Mozilla/5.0" https://budgetsoldado2026.netlify.app/
