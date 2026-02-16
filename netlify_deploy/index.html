@@ -28,8 +28,19 @@
 </head>
 
 <body>
-    <!-- FORCE EMBED MODE = NO BUTTONS -->
-    <iframe src="https://budget2026.streamlit.app/?embed=true"></iframe>
+    <div
+        style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: sans-serif; text-align: center;">
+        <h2 style="margin-bottom: 10px;">🚀 Iniciando Plan Minero 2026...</h2>
+        <p style="color: #888;">Si no redirige automáticamente, <a href="https://budget2026.streamlit.app/"
+                style="color: #4da6ff;">haz clic aquí</a>.</p>
+    </div>
+
+    <!-- AUTO REDIRECT (Bypass Iframe Issues) -->
+    <script>
+        setTimeout(function () {
+            window.location.href = "https://budget2026.streamlit.app/";
+        }, 1000); // 1 second delay to show branding
+    </script>
 </body>
 
 </html>
