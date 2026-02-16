@@ -1,0 +1,8 @@
+[build]
+  publish = "."
+
+[[redirects]]
+  from = "/*"
+  to = "https://budget2026.streamlit.app/:splat"
+  status = 301
+  force = true
