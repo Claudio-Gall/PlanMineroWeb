@@ -173,13 +173,7 @@ def query_gemini_cached(prompt, api_key):
                 time.sleep(base_wait)
             else:
                 return f"Request Failed: {e}"
-
-                else:
-                    return f"API Error (429): Quota Exceeded. Please wait a minute."
-            else:
-                return f"API Error ({resp.status_code}): {resp.text[:500]}"
-        except Exception as e:
-            return f"Connection Error: {str(e)}"
+    return "Error: Failed after retries."
     return "Error: Failed after retries."
 
 class MiningChatAgent:

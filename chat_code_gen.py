@@ -173,27 +173,59 @@ def extract_code_from_response(response: str) -> str:
 
 @st.cache_data(show_spinner=False, ttl=3600)
 def query_gemini_code_generation(prompt, api_key):
-    """Query Gemini for CODE generation (not data processing)."""
+    """
+    STABILITY UPGRADE V5.0:
+    - Implements Exponential Backoff for 503/429 errors.
+    - Automatic Fallback: Pro -> Flash if Pro is busy.
+    """
     if not api_key:
         return "Error: No API Key."
     
     import requests
     import urllib3
+    import time
     urllib3.disable_warnings()
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={api_key}"
-    headers = {"Content-Type": "application/json"}
-    data = {"contents": [{"parts": [{"text": prompt}]}]}
+    models = ["gemini-1.5-pro-latest", "gemini-1.5-flash-latest"]
+    max_retries = 3
+    base_wait = 2
 
-    try:
-        s = requests.Session()
-        s.trust_env = False
-        resp = s.post(url, headers=headers, json=data, timeout=90, verify=False)
-        if resp.status_code == 200:
-            return resp.json()['candidates'][0]['content']['parts'][0]['text']
-        return f"API Error ({resp.status_code}): {resp.text[:300]}"
-    except Exception as e:
-        return f"Connection Error: {str(e)}"
+    for model_name in models:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+        headers = {"Content-Type": "application/json"}
+        data = {"contents": [{"parts": [{"text": prompt}]}]}
+
+        for attempt in range(max_retries):
+            try:
+                s = requests.Session()
+                s.trust_env = False
+                resp = s.post(url, headers=headers, json=data, timeout=60, verify=False)
+                
+                if resp.status_code == 200:
+                    try:
+                        return resp.json()['candidates'][0]['content']['parts'][0]['text']
+                    except Exception as e:
+                        return f"Error en estructura de respuesta: {str(e)}"
+                
+                # If 503 (Busy) or 429 (Quota), wait and retry
+                if resp.status_code in [503, 429]:
+                    wait_time = base_wait * (2 ** attempt)
+                    print(f"⚠️ {model_name} ocupado ({resp.status_code}). Reintentando en {wait_time}s...")
+                    time.sleep(wait_time)
+                    continue
+                
+                return f"API Error ({resp.status_code}): {resp.text[:300]}"
+                
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    time.sleep(base_wait)
+                    continue
+                print(f"❌ Error de conexión con {model_name}: {str(e)}")
+                break # Try next model
+        
+        print(f"🔄 Saltando al siguiente modelo tras fallar con {model_name}...")
+    
+    return "Error: Todos los modelos de IA están fuera de servicio o saturados. Por favor, intenta de nuevo en un minuto."
 
 class CodeGenerationChatAgent:
     """
