@@ -134,47 +134,42 @@ def query_gemini_cached(prompt, api_key):
     import urllib3
     urllib3.disable_warnings()
 
-    # FIXED: Use gemini-3-flash-preview (Available RPD Quota)
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={api_key}"
-    headers = {
-        "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-    }
-    data = {"contents": [{"parts": [{"text": prompt}]}]}
+    models = ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-flash-latest"]
+    max_retries = 3
+    base_wait = 2
 
-    import time
-    import time
-    import math
-    max_retries = 5  # Increased to 5
-    base_wait = 4    # Increased base wait
+    for model_name in models:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+        data = {"contents": [{"parts": [{"text": prompt}]}]}
 
-    for attempt in range(max_retries + 1):
-        try:
-            s = requests.Session()
-            s.trust_env = False  # Nuclear Bypass
-            resp = s.post(url, headers=headers, json=data, timeout=50, verify=False)
-            
-            if resp.status_code == 200:
-                try:
-                    return resp.json()['candidates'][0]['content']['parts'][0]['text']
-                except:
-                    return f"Response Structure Error: {resp.text[:500]}"
-            elif resp.status_code == 429:
-                wait_time = base_wait * (2 ** attempt) # Exponential 4, 8, 16, 32, 64
-                if attempt < max_retries:
-                    print(f"⚠️ API 429 Hit. Waiting {wait_time}s (Attempt {attempt+1}/{max_retries})...")
+        for attempt in range(max_retries):
+            try:
+                s = requests.Session()
+                s.trust_env = False  # Nuclear Bypass
+                resp = s.post(url, headers=headers, json=data, timeout=50, verify=False)
+                
+                if resp.status_code == 200:
+                    try:
+                        return resp.json()['candidates'][0]['content']['parts'][0]['text']
+                    except:
+                        return f"Response Structure Error: {resp.text[:500]}"
+                
+                if resp.status_code in [503, 429]:
+                    wait_time = base_wait * (2 ** attempt)
+                    print(f"⚠️ {model_name} ocupado ({resp.status_code}). Reintentando en {wait_time}s...")
                     time.sleep(wait_time)
-                else:
-                    return f"API Error (429): Quota Exceeded. Please wait a minute. {resp.text}"
-            else:
-                return f"API Error ({resp.status_code}): {resp.text}"
-        except Exception as e:
-            if attempt < max_retries:
+                    continue
+                
+                # If neither 200 nor retryable, break and try next model
+                break
+            except Exception as e:
                 time.sleep(base_wait)
-            else:
-                return f"Request Failed: {e}"
-    return "Error: Failed after retries."
-    return "Error: Failed after retries."
+                
+    return "Error: Todos los modelos de IA están fuera de servicio o saturados. Por favor, intenta de nuevo en un minuto."
 
 class MiningChatAgent:
     """

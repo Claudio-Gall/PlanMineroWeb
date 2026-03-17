@@ -186,7 +186,8 @@ def query_gemini_code_generation(prompt, api_key):
     import time
     urllib3.disable_warnings()
 
-    models = ["gemini-flash-latest"]
+    # PRIMARIOS (Paid Key) y Respaldo (Flash)
+    models = ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-flash-latest"]
     max_retries = 3
     base_wait = 2
 
