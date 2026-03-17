@@ -186,7 +186,7 @@ def query_gemini_code_generation(prompt, api_key):
     import time
     urllib3.disable_warnings()
 
-    models = ["gemini-1.5-pro-latest", "gemini-1.5-flash-latest"]
+    models = ["gemini-1.5-pro", "gemini-1.5-flash"]
     max_retries = 3
     base_wait = 2
 
