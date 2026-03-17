@@ -208,21 +208,23 @@ def query_gemini_code_generation(prompt, api_key):
                     except Exception as e:
                         return f"Error en estructura de respuesta: {str(e)}"
                 
-                # If 503 (Busy) or 429 (Quota), wait and retry
                 if resp.status_code in [503, 429]:
                     wait_time = base_wait * (2 ** attempt)
                     print(f"⚠️ {model_name} ocupado ({resp.status_code}). Reintentando en {wait_time}s...")
                     time.sleep(wait_time)
                     continue
                 
-                return f"API Error ({resp.status_code}): {resp.text[:300]}"
+                # If neither 200 nor retryable (e.g., 404 Not Found), move to NEXT model
+                print(f"⚠️ {model_name} falló con {resp.status_code}. Pasando al modelo de respaldo...")
+                break # breaks inner attempt loop, goes to next model in outer loop
                 
             except Exception as e:
+                print(f"⚠️ Exception in {model_name}: {e}")
                 if attempt < max_retries - 1:
                     time.sleep(base_wait)
                     continue
-                print(f"❌ Error de conexión con {model_name}: {str(e)}")
-                break # Try next model
+                else:
+                    break
         
         print(f"🔄 Saltando al siguiente modelo tras fallar con {model_name}...")
     
